@@ -1,5 +1,6 @@
 package spark_visualizer.visualization;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -15,6 +16,9 @@ import javafx.scene.Group;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
+import javafx.stage.FileChooser;
+import javafx.stage.FileChooser.ExtensionFilter;
+import javafx.stage.Stage;
 import javafx.util.Duration;
 import javafx.util.Pair;
 import scala.Tuple2;
@@ -41,6 +45,9 @@ public class SparkVisualizerController implements Initializable {
 	
 	@FXML
 	private ScrollPane scrollpane;
+	
+	@FXML 
+	private Button fileButton;
 	
 	@FXML
 	private TextField dataSize, blockSize, nExecutors;
@@ -280,7 +287,9 @@ public class SparkVisualizerController implements Initializable {
 		ft.setToValue(Color.YELLOW);
 		ft.setCycleCount(2);
 	    ft.setAutoReverse(true);
-		
+	    
+	    fileButton.setOnAction((event) -> chooseFile());
+		 
 		zoom_slider.valueProperty().addListener((observable, oldValue, newValue) -> zoom(newValue.doubleValue()));
 	}
 	
@@ -304,5 +313,14 @@ public class SparkVisualizerController implements Initializable {
 			systemPhases.get(p).setScaleX(zoom_value);
 			systemPhases.get(p).setScaleY(zoom_value);
 		}
+	}
+	
+	private void chooseFile() {
+		FileChooser fileChooser = new FileChooser();
+		fileChooser.getExtensionFilters().add(new ExtensionFilter("txt",  "*.txt"));
+		fileChooser.setTitle("Open Resource File");
+		File file = fileChooser.showOpenDialog(new Stage());
+		
+		if (file != null) fileButton.setText(file.getName());
 	}
 }

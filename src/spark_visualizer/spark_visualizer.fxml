@@ -149,6 +149,16 @@
                                     <ChoiceBox fx:id="valueType" translateX="20.0" translateY="5.0" />
                                  </children>
                               </HBox>
+                              <HBox>
+                                 <children>
+                                    <Label text="Input file: " translateX="10.0" translateY="10.0" />
+                                    <Button fx:id="fileButton" mnemonicParsing="false" text="Choose file" translateX="30.0" translateY="5.0">
+                                       <opaqueInsets>
+                                          <Insets />
+                                       </opaqueInsets>
+                                    </Button>
+                                 </children>
+                              </HBox>
                            </children>
                         </VBox>
                      </children></AnchorPane>

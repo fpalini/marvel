@@ -57,13 +57,6 @@ public class DistributedSystemFx extends Group {
 
 		addSearchAnimation();
 	}
-	
-	public void parallelize(List<Tuple2<String,String>> datasetPartitions[]) {
-		createRDD(datasetPartitions, blockSize);
-		relocate();
-
-		addSearchAnimation();
-	}
 
 	public void createRDD(List<Tuple2<String, String>>[] datasetPartitions, int blockSize2) {
 		
@@ -98,6 +91,10 @@ public class DistributedSystemFx extends Group {
 		}
 	}
 
+	
+	/*
+	 * Move down the executor. It manages the resize of RDDs.
+	 */
 	public void relocate() {
 		int cols = nExecutors < 6 ? nExecutors : 6;
 
@@ -133,6 +130,10 @@ public class DistributedSystemFx extends Group {
 		}
 	}
 
+	
+	/*
+	 * It copies the elements of the current system, into a new system, without side-effects.
+	 */
 	public DistributedSystemFx copy() {
 		DistributedSystemFx system = new DistributedSystemFx(nExecutors, blockSize);
 		ArrayList<ExecutorFx> es = new ArrayList<>();
@@ -161,6 +162,10 @@ public class DistributedSystemFx extends Group {
 		return system;
 	}
 
+	
+	/*
+	 * It splits the dataset into blocks with size=blockSize, among the executors.
+	 */
 	public void createRDD(List<Tuple2<String,String>> dataset, ArrayList<ExecutorFx> executors, int blockSize) {
 
 		Iterator<Tuple2<String, String>> data_iterator = dataset.iterator();
@@ -194,6 +199,7 @@ public class DistributedSystemFx extends Group {
 					executor.addBlockFromRDD(block_iterator.next());
 	}
 
+	
 	public void min() {
 		BlockFx block;
 		RecordFx first_record;
@@ -207,7 +213,7 @@ public class DistributedSystemFx extends Group {
 			executor.getToRDD().addBlock(block);
 		}
 
-		relocate(); //TODO
+		relocate();
 
 		String overallMin = null;
 		String keyText, valueText;
@@ -260,7 +266,7 @@ public class DistributedSystemFx extends Group {
 			executor.getToRDD().addBlock(block);
 		}
 
-		relocate(); //TODO
+		relocate();
 
 		String overallMax = null;
 		String keyText, valueText;
@@ -311,7 +317,7 @@ public class DistributedSystemFx extends Group {
 			executor.getToRDD().addBlock(block);
 		}
 
-		relocate(); //TODO
+		relocate();
 
 		Integer overallCount = 0;
 		Integer count;
@@ -354,7 +360,7 @@ public class DistributedSystemFx extends Group {
 			executor.getToRDD().addBlock(block);
 		}
 
-		relocate(); //TODO
+		relocate();
 
 		Double overallSum = 0.0;
 		Double sum;

@@ -80,7 +80,6 @@ public class BlockFx extends Group {
 
         return records;
     }
-
     
     public double height() { return height; }
     
@@ -89,6 +88,7 @@ public class BlockFx extends Group {
     public void incrHeight(double dh) { height += dh; }
     
     public void incrWidth(double dw) { width += dw; }
+    
     public int size() {return getChildren().size(); }
     
     @Override
