@@ -11,8 +11,8 @@ import javafx.animation.FillTransition;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
+import javafx.scene.Group;
 import javafx.scene.control.*;
-import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
@@ -25,7 +25,7 @@ import spark_visualizer.visualization.sparkfx.ExecutorFx;
 public class SparkVisualizerController implements Initializable {
 	
 	@FXML
-	private AnchorPane drawingPane;
+	private Group canvas;
 
 	@FXML
 	private ChoiceBox<String> keyType, valueType;
@@ -37,7 +37,10 @@ public class SparkVisualizerController implements Initializable {
 	private Slider zoom_slider;
 	
 	@FXML
-	private Label zoom_value;
+	private Label zoom_label;
+	
+	@FXML
+	private ScrollPane scrollpane;
 	
 	@FXML
 	private TextField dataSize, blockSize, nExecutors;
@@ -50,6 +53,7 @@ public class SparkVisualizerController implements Initializable {
 	
 	private Orchestrator orchestrator;
 	
+	private double zoom_value = 1;
 	
 	/**
 	 * Resets the system, generates a new random dataset
@@ -62,6 +66,8 @@ public class SparkVisualizerController implements Initializable {
 		List<Tuple2<String,String>> dataset = createDataset();
 
 		systemPhases.get(phase).parallelize(dataset);
+		
+		// zoom();
 	}
 
 	/**
@@ -124,6 +130,8 @@ public class SparkVisualizerController implements Initializable {
         systemPhases.add(systemPhases.get(phase).copy()); // snapshot!
         nextPhase();
         systemPhases.get(phase).overwriteFromRDD();
+        
+        resetZoom(); 
     }
 	
 	
@@ -155,8 +163,8 @@ public class SparkVisualizerController implements Initializable {
 	 * @param index index of the system phase.
 	 */
 	public void changeSystemPhase(int index) {
-		drawingPane.getChildren().clear();
-		drawingPane.getChildren().add(systemPhases.get(index));
+		canvas.getChildren().clear();
+		canvas.getChildren().add(systemPhases.get(index));
 	}
 	
 	
@@ -223,14 +231,16 @@ public class SparkVisualizerController implements Initializable {
 	 */
 	@FXML
 	public void reset() {
-		drawingPane.getChildren().clear();
+		canvas.getChildren().clear();
 		systemPhases.clear();
 		phase = 0;
 		
 		systemPhases.add(new DistributedSystemFx(Integer.parseInt(nExecutors.getText()), 
 				Integer.parseInt(blockSize.getText())));
 		
-		drawingPane.getChildren().add(systemPhases.get(phase));
+		canvas.getChildren().add(systemPhases.get(phase));
+		
+		resetZoom();
 	}
 	
 	@Override
@@ -261,34 +271,38 @@ public class SparkVisualizerController implements Initializable {
         keyType.setValue("String");
         valueType.setValue("Integer");
 
-        systemPhases.add(new DistributedSystemFx(Integer.parseInt(nExecutors.getText()), Integer.parseInt(blockSize.getText())));
-		
-		drawingPane.getChildren().add(systemPhases.get(phase));
+        DistributedSystemFx system = new DistributedSystemFx(Integer.parseInt(nExecutors.getText()), 
+        														Integer.parseInt(blockSize.getText()));
+        
+        systemPhases.add(system);
+		canvas.getChildren().add(system);
 		
 		ft.setToValue(Color.YELLOW);
 		ft.setCycleCount(2);
 	    ft.setAutoReverse(true);
 		
-		zoom_slider.valueProperty().addListener(
-				(observable, oldValue, newValue) -> {
-					zoom_value.setText(String.format("%.1fx", newValue.doubleValue()/100));
-					
-					double scale_value = newValue.doubleValue()/100;
+		zoom_slider.valueProperty().addListener((observable, oldValue, newValue) -> zoom(newValue.doubleValue()));
+	}
+	
+	private void zoom(double newValue) {
+		zoom_label.setText(String.format("%.1fx", newValue/100));
+		
+		zoom_value = newValue / 100;
 
-					for (int p = 0; p < systemPhases.size(); p++) {
-	                    systemPhases.get(p).setScaleX(scale_value);
-	                    systemPhases.get(p).setScaleY(scale_value);
-
-	                    double newWidth = systemPhases.get(p).width() * scale_value;
-	                    double newHeight = systemPhases.get(p).height() * scale_value;
-
-	                    drawingPane.setPrefWidth(newWidth);
-	                    drawingPane.setPrefHeight(newHeight);
-
-	                    systemPhases.get(p).setTranslateX((newWidth - systemPhases.get(p).width())/2 + 100);
-	                    systemPhases.get(p).setTranslateY((newHeight - systemPhases.get(p).height())/2 + 50);
-	                }
-				}
-		);
+		for (int p = 0; p < systemPhases.size(); p++) {
+			systemPhases.get(p).setScaleX(zoom_value);
+			systemPhases.get(p).setScaleY(zoom_value);
+		}
+	}
+	
+	private void resetZoom() {
+		zoom_label.setText("1.0x");
+		zoom_slider.setValue(100);
+		zoom_value = 1;
+		
+		for (int p = 0; p < systemPhases.size(); p++) {
+			systemPhases.get(p).setScaleX(zoom_value);
+			systemPhases.get(p).setScaleY(zoom_value);
+		}
 	}
 }

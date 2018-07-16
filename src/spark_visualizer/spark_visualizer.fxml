@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
+<?import javafx.scene.Group?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ChoiceBox?>
 <?import javafx.scene.control.ComboBox?>
@@ -21,9 +22,9 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane prefHeight="800.0" prefWidth="1024.0" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1" fx:controller="spark_visualizer.visualization.SparkVisualizerController">
+<BorderPane prefHeight="600.0" prefWidth="1000.0" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1" fx:controller="spark_visualizer.visualization.SparkVisualizerController">
    <top>
-    <MenuBar maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" BorderPane.alignment="CENTER">
+    <MenuBar BorderPane.alignment="CENTER">
       <menus>
         <Menu mnemonicParsing="false" text="File">
           <items>
@@ -43,7 +44,7 @@
     </MenuBar>
    </top>
    <bottom>
-      <ToolBar maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308">
+      <ToolBar>
         <items>
             <Label text="Map" />
             <ComboBox fx:id="map_list" prefWidth="100.0" />
@@ -59,7 +60,7 @@
             </Separator>
           <Button mnemonicParsing="false" onAction="#compute" text="Compute" />
             <Button mnemonicParsing="false" onAction="#generate" text="Generate Data" />
-            <Label fx:id="zoom_value" text="0.5x">
+            <Label fx:id="zoom_label" text="1.0x">
                <padding>
                   <Insets left="20.0" />
                </padding></Label>
@@ -85,14 +86,14 @@
       </ToolBar>
    </bottom>
    <center>
-      <TabPane prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
+      <TabPane tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
         <tabs>
           <Tab text="View">
                <content>
-                  <ScrollPane fx:id="scrollpane" prefHeight="200.0" prefWidth="200.0">
-                    <content>
-                      <AnchorPane fx:id="drawingPane" />
-                    </content>
+                  <ScrollPane fx:id="scrollpane">
+                     <content>
+                        <Group fx:id="canvas" />
+                     </content>
                   </ScrollPane>
                </content>
           </Tab>
