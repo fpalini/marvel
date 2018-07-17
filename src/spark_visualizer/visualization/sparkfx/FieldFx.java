@@ -6,6 +6,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 import javafx.animation.FillTransition;
 import javafx.scene.control.Label;
+import javafx.scene.control.Tooltip;
 
 /**
  * Class representing a field of an RDD record, using components of JavaFX.
@@ -32,6 +33,8 @@ public class FieldFx extends StackPane {
 
         cell = new Rectangle(WIDTH, HEIGHT, Color.CADETBLUE);
         cell.setStroke(Color.BLACK);
+        Tooltip.install(cell, new Tooltip(value));
+        Tooltip.install(text, new Tooltip(value));
 
         colorChange = new FillTransition(Duration.millis(ANIMATION_MS), cell);
         colorChange.setToValue(Color.YELLOW);

@@ -50,6 +50,9 @@ public class SparkVisualizerController implements Initializable {
 	private Button fileButton;
 	
 	@FXML
+	private TextField split_char, file_key_column, file_value_column;
+	
+	@FXML
 	private TextField dataSize, blockSize, nExecutors;
 
 	private ArrayList<DistributedSystemFx> systemPhases = new ArrayList<>();
@@ -62,6 +65,8 @@ public class SparkVisualizerController implements Initializable {
 	
 	private double zoom_value = 1;
 	
+	private File input_file;
+	
 	/**
 	 * Resets the system, generates a new random dataset
 	 * and partitions it among the executors.
@@ -73,8 +78,6 @@ public class SparkVisualizerController implements Initializable {
 		List<Tuple2<String,String>> dataset = createDataset();
 
 		systemPhases.get(phase).parallelize(dataset);
-		
-		// zoom();
 	}
 
 	/**
@@ -83,8 +86,16 @@ public class SparkVisualizerController implements Initializable {
 	 * @return list of {@literal <key, value>} pairs, representing the dataset.
 	 */
     private List<Tuple2<String,String>> createDataset() {
-        orchestrator.createRandomRDD(keyType.getValue(), valueType.getValue(), Integer.parseInt(dataSize.getText()));
-        return orchestrator.getDataset();
+        
+    	if (input_file != null)
+    		orchestrator.createRDDfromFile(Integer.parseInt(dataSize.getText()), input_file, 
+    				split_char.getText().trim(), Integer.parseInt(file_key_column.getText()), 
+    				Integer.parseInt(file_value_column.getText()));
+    	else
+    		orchestrator.createRandomRDD(keyType.getValue(), valueType.getValue(), 
+    				Integer.parseInt(dataSize.getText()));
+        
+    	return orchestrator.getDataset();
     }
     
     /**
@@ -317,10 +328,10 @@ public class SparkVisualizerController implements Initializable {
 	
 	private void chooseFile() {
 		FileChooser fileChooser = new FileChooser();
-		fileChooser.getExtensionFilters().add(new ExtensionFilter("txt",  "*.txt"));
-		fileChooser.setTitle("Open Resource File");
-		File file = fileChooser.showOpenDialog(new Stage());
+		fileChooser.getExtensionFilters().add(new ExtensionFilter("CSV",  "*.csv"));
+		fileChooser.setTitle("Import Dataset File");
+		input_file = fileChooser.showOpenDialog(new Stage());
 		
-		if (file != null) fileButton.setText(file.getName());
+		if (input_file != null) fileButton.setText(input_file.getName());
 	}
 }

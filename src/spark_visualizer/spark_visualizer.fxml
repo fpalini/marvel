@@ -157,6 +157,12 @@
                                           <Insets />
                                        </opaqueInsets>
                                     </Button>
+                                    <Label text="Split character: " translateX="50.0" translateY="10.0" />
+                                    <TextField fx:id="split_char" prefWidth="30.0" text="," translateX="60.0" translateY="5.0" />
+                                    <Label text="Key column: " translateX="80.0" translateY="10.0" />
+                                    <TextField fx:id="file_key_column" prefWidth="30.0" text="1" translateX="90.0" translateY="5.0" />
+                                    <Label text="Value column: " translateX="110.0" translateY="10.0" />
+                                    <TextField fx:id="file_value_column" prefWidth="30.0" text="2" translateX="120.0" translateY="5.0" />
                                  </children>
                               </HBox>
                            </children>

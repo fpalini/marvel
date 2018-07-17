@@ -1,5 +1,9 @@
 package spark_visualizer.orchestrator;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -17,6 +21,41 @@ public class Orchestrator {
 	public Orchestrator(int nExecutors) {
 		this.nExecutors = nExecutors;
 		mapReduceAlgo = new MapReduceAlgo(nExecutors); // setup of the Spark system
+	}
+	
+	public void createRDDfromFile(int size, File input_file, String split_char, int key_column, int value_column) {
+        ArrayList<Tuple2<String, String>> dataset = new ArrayList<>();
+        BufferedReader reader = null;
+        
+        try {
+	        reader = new BufferedReader(new FileReader(input_file));
+	
+	        String key = null;
+	        String value = null;
+	        
+	        int el_counter = 0;
+	        String line, key_value_line[];
+        
+	        while((line = reader.readLine()) != null && el_counter++ < size) {
+	        	key_value_line = line.split(split_char);
+	        	
+	        	if (key_value_line.length > 1) {
+	        		key = key_column == 0 ? null : key_value_line[key_column-1];
+		        	value = key_value_line[value_column-1]; 
+	        	}
+	        	else
+	        		value = key_value_line[0];
+	        
+		        dataset.add(new Tuple2<>(key, value));
+	        }
+        } 
+        catch (IOException e) { e.printStackTrace(); } 
+        finally { 
+        	try { reader.close(); } 
+        	catch (IOException e) { e.printStackTrace(); } 
+        }
+
+        mapReduceAlgo.setFromRDD(mapReduceAlgo.parallelize(dataset));
 	}
 	
 	public void createRandomRDD(String keyType, String valueType, int size) {		
