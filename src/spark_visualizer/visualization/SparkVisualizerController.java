@@ -15,6 +15,7 @@ import javafx.geometry.Insets;
 import javafx.scene.Group;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
+import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
@@ -22,7 +23,8 @@ import javafx.util.Pair;
 import scala.Tuple2;
 import spark_visualizer.orchestrator.Orchestrator;
 import spark_visualizer.visualization.sparkfx.DistributedSystemFx;
-import spark_visualizer.visualization.sparkfx.ExecutorFx;
+import spark_visualizer.visualization.sparkfx.NodeFx;
+import spark_visualizer.visualization.sparkfx.RecordFx;
 
 import org.controlsfx.control.BreadCrumbBar;
 
@@ -42,6 +44,9 @@ public class SparkVisualizerController implements Initializable {
 
 	@FXML
 	private Label zoom_label, speed_label;
+	
+	@FXML
+	private Button done_button, run_button;
 
 	@FXML
 	private ScrollPane scrollpane;
@@ -53,7 +58,7 @@ public class SparkVisualizerController implements Initializable {
 	private TextField split, keycol, valuecol;
 
 	@FXML
-	private TextField datasize, blocksize, executors;
+	private TextField datasize, blocksize, nodes;
 
 	private File input_file;
 
@@ -66,13 +71,14 @@ public class SparkVisualizerController implements Initializable {
 
 	private TreeItem<DistributedSystemFx> selectedStage;
 
-	private String map_operations[] = new String[] { "Swap", "Filter" };
-	private String reduce_operations[] = new String[] { "Count", "Min", "Max", "Sum", "ReduceByKey" };
+	private String map_operations[] = new String[] { "Swap", "FilterOnKey", "FilterOnValue" };
+	private String reduce_operations[] = new String[] { "Count", "MinOnKey", "MinOnValue", 
+			"MaxOnKey", "MaxOnValue", "SumOnKey", "SumOnValue", "ReduceByKey + Count", "ReduceByKey + Min", "ReduceByKey + Max", "ReduceByKey + Sum" };
 	private String operation = reduce_operations[0];
 
 	/**
 	 * Resets the system, generates a new random dataset
-	 * and partitions it among the executors.
+	 * and partitions it among the nodes.
 	 */
 	@FXML
 	private void generate() {
@@ -85,6 +91,12 @@ public class SparkVisualizerController implements Initializable {
 		currentSystem.setSystemName("Generate");
 		stages.setSelectedCrumb(new TreeItem<>(currentSystem));
 		selectedStage = stages.getSelectedCrumb();
+		
+		for (NodeFx node : currentSystem.getNodes())
+			if (node.getFromRDD().size() == 0)
+        		node.setColor(Color.CRIMSON);
+        	else
+        		node.setColor(Color.DEEPSKYBLUE);
 
 		setCurrentSystem(currentSystem.copy());
 	}
@@ -113,7 +125,7 @@ public class SparkVisualizerController implements Initializable {
 	 * @throws IOException caused by the filter options window.
 	 */
 	@FXML
-	void compute() throws IOException {
+	void run() throws IOException {
 		String map_function = map_list.getValue();
 		String reduce_function = reduce_list.getValue();
 
@@ -122,9 +134,9 @@ public class SparkVisualizerController implements Initializable {
 			return;
 
 		// execution with more than one RDD not permitted.
-		for (ExecutorFx executor : currentSystem.getExecutors())
-			if (executor.getToRDD().size() > 0)
-				executor.getToRDD().clear();
+		for (NodeFx node : currentSystem.getNodes())
+			if (node.getToRDD().size() > 0)
+				node.getToRDD().clear();
 
 		// Execution after an aggregation (not by key) not permitted
 		for (String op : Arrays.copyOf(reduce_operations, reduce_operations.length-1))
@@ -136,54 +148,151 @@ public class SparkVisualizerController implements Initializable {
 		switch (map_function) {
 		case "Swap":
 			currentSystem.swap();
-			currentSystem.getCurrentTransition().play();
+			currentSystem.getCurrentTransition().setOnFinished(event -> done_button.setDisable(false));
 			currentSystem.getCurrentTransition().setRate(speed_value);
+			currentSystem.getCurrentTransition().play();
 			currentSystem.setSystemName("Swap");
 			break;
-		case "Filter":
+		case "FilterOnKey":
 			if (openFilterOptions()) {
-				currentSystem.filter(condition, value);
-				currentSystem.getCurrentTransition().play();
+				currentSystem.filter(condition, value, true);
+				currentSystem.getCurrentTransition().setOnFinished(event -> done_button.setDisable(false));
 				currentSystem.getCurrentTransition().setRate(speed_value);
-				currentSystem.setSystemName("Filter");
+				currentSystem.getCurrentTransition().play();
+				currentSystem.setSystemName("FilterOnKey");
 			}
 			break;
+		case "FilterOnValue":
+		if (openFilterOptions()) {
+			currentSystem.filter(condition, value, false);
+			currentSystem.getCurrentTransition().setOnFinished(event -> done_button.setDisable(false));
+			currentSystem.getCurrentTransition().setRate(speed_value);
+			currentSystem.getCurrentTransition().play();
+			currentSystem.setSystemName("FilterOnValue");
 		}
+		break;
+	}
 
 		switch (reduce_function) {
 		case "Count":
 			currentSystem.count(false);
-			currentSystem.getCurrentTransition().play();
+			currentSystem.getCurrentTransition().setOnFinished(event -> done_button.setDisable(false));
 			currentSystem.getCurrentTransition().setRate(speed_value);
+			currentSystem.getCurrentTransition().play();
 			currentSystem.setSystemName("Count");
 			break;
-		case "Min":
-			currentSystem.min(false);
-			currentSystem.getCurrentTransition().play();
-			currentSystem.getCurrentTransition().setRate(speed_value);
-			currentSystem.setSystemName("Min");
-			break;
-		case "Max":
-			currentSystem.max(false);
-			currentSystem.getCurrentTransition().play();
-			currentSystem.getCurrentTransition().setRate(speed_value);
-			currentSystem.setSystemName("Max");
-			break;
-		case "Sum":
-			currentSystem.sum(false);
-			currentSystem.getCurrentTransition().play();
-			currentSystem.getCurrentTransition().setRate(speed_value);
-			currentSystem.setSystemName("Sum");
-			break;
-		case "ReduceByKey":
-			if (openReduceByKeyOptions()) {
-				currentSystem.reduceByKey(operation);
-				currentSystem.getCurrentTransition().play();
-				currentSystem.getCurrentTransition().setRate(speed_value);
-				currentSystem.setSystemName("ReduceByKey");
+		
+		case "MinOnKey":
+			for (NodeFx node : currentSystem.getNodes()) {
+				try {
+					for (RecordFx record : node.getFromRDD().getRecords()) 
+						Double.parseDouble(record.getKey().toString());
+				} catch (NumberFormatException n) { DistributedSystemFx.warning("Values must be numbers!"); return; }
 			}
+			currentSystem.min(false, true);
+			currentSystem.getCurrentTransition().setOnFinished(event -> done_button.setDisable(false));
+			currentSystem.getCurrentTransition().setRate(speed_value);
+			currentSystem.getCurrentTransition().play();
+			currentSystem.setSystemName("MinOnKey");
+			break;
+		case "MinOnValue":
+			for (NodeFx node : currentSystem.getNodes()) {
+				try {
+					for (RecordFx record : node.getFromRDD().getRecords()) 
+						Double.parseDouble(record.getValue().toString());
+				} catch (NumberFormatException n) { DistributedSystemFx.warning("Values must be numbers!"); return; }
+			}
+			currentSystem.min(false, false);
+			currentSystem.getCurrentTransition().setOnFinished(event -> done_button.setDisable(false));
+			currentSystem.getCurrentTransition().setRate(speed_value);
+			currentSystem.getCurrentTransition().play();
+			currentSystem.setSystemName("MinOnValue");
+			break;
+		
+		case "MaxOnKey":
+			for (NodeFx node : currentSystem.getNodes()) {
+				try {
+					for (RecordFx record : node.getFromRDD().getRecords()) 
+						Double.parseDouble(record.getKey().toString());
+				} catch (NumberFormatException n) { DistributedSystemFx.warning("Values must be numbers!"); return; }
+			}
+			currentSystem.max(false, true);
+			currentSystem.getCurrentTransition().setOnFinished(event -> done_button.setDisable(false));
+			currentSystem.getCurrentTransition().setRate(speed_value);
+			currentSystem.getCurrentTransition().play();
+			currentSystem.setSystemName("MaxOnKey");
+			break;
+		case "MaxOnValue":
+			for (NodeFx node : currentSystem.getNodes()) {
+				try {
+					for (RecordFx record : node.getFromRDD().getRecords()) 
+						Double.parseDouble(record.getValue().toString());
+				} catch (NumberFormatException n) { DistributedSystemFx.warning("Values must be numbers!"); return; }
+			}
+			currentSystem.max(false, false);
+			currentSystem.getCurrentTransition().setOnFinished(event -> done_button.setDisable(false));
+			currentSystem.getCurrentTransition().setRate(speed_value);
+			currentSystem.getCurrentTransition().play();
+			currentSystem.setSystemName("MaxOnValue");
+			break;
+		
+		case "SumOnKey":
+			for (NodeFx node : currentSystem.getNodes()) {
+				try {
+					for (RecordFx record : node.getFromRDD().getRecords()) 
+						Double.parseDouble(record.getKey().toString());
+				} catch (NumberFormatException n) { DistributedSystemFx.warning("Values must be numbers!"); return; }
+			}
+			currentSystem.sum(false, true);
+			currentSystem.getCurrentTransition().setOnFinished(event -> done_button.setDisable(false));
+			currentSystem.getCurrentTransition().setRate(speed_value);
+			currentSystem.getCurrentTransition().play();
+			currentSystem.setSystemName("SumOnKey");
+			break;
+		case "SumOnValue":
+			for (NodeFx node : currentSystem.getNodes()) {
+				try {
+					for (RecordFx record : node.getFromRDD().getRecords()) 
+						Double.parseDouble(record.getValue().toString());
+				} catch (NumberFormatException n) { DistributedSystemFx.warning("Values must be numbers!"); return; }
+			}
+			currentSystem.sum(false, false);
+			currentSystem.getCurrentTransition().setOnFinished(event -> done_button.setDisable(false));
+			currentSystem.getCurrentTransition().setRate(speed_value);
+			currentSystem.getCurrentTransition().play();
+			currentSystem.setSystemName("SumOnValue");
+			break;
+			
+		case "ReduceByKey + Count":
+			currentSystem.reduceByKey(operation, done_button);
+			currentSystem.getCurrentTransition().setRate(speed_value);
+			currentSystem.getCurrentTransition().play();
+			currentSystem.setSystemName("ReduceByKey + Count");
+			break;
+		
+		
+		case "ReduceByKey + Min":
+			currentSystem.reduceByKey(operation, done_button);
+			currentSystem.getCurrentTransition().setRate(speed_value);
+			currentSystem.getCurrentTransition().play();
+			currentSystem.setSystemName("ReduceByKey + Min");
+			break;
+		
+		case "ReduceByKey + Max":
+			currentSystem.reduceByKey(operation, done_button);
+			currentSystem.getCurrentTransition().setRate(speed_value);
+			currentSystem.getCurrentTransition().play();
+			currentSystem.setSystemName("ReduceByKey + Max");
+			break;
+			
+		case "ReduceByKey + Sum":
+			currentSystem.reduceByKey(operation, done_button);
+			currentSystem.getCurrentTransition().setRate(speed_value);
+			currentSystem.getCurrentTransition().play();
+			currentSystem.setSystemName("ReduceByKey + Sum");
 			break;
 		}
+		
 	}
 
 
@@ -194,11 +303,11 @@ public class SparkVisualizerController implements Initializable {
 	@FXML
 	void done() {
 		int numVoid = 0;
-		for (ExecutorFx executor : currentSystem.getExecutors())
-			if (executor.getToRDD().size() == 0) numVoid++;
+		for (NodeFx node : currentSystem.getNodes())
+			if (node.getToRDD().size() == 0) numVoid++;
 
-		// if all the executors 
-		if (numVoid == Integer.parseInt(executors.getText())) return;
+		// if all the nodes 
+		if (numVoid == Integer.parseInt(nodes.getText())) return;
 
 		currentSystem.overwriteFromRDD();
 
@@ -207,11 +316,21 @@ public class SparkVisualizerController implements Initializable {
 		selectedStage.getChildren().add(crumb_currentSystem);
 		stages.setSelectedCrumb(crumb_currentSystem);
 		selectedStage = crumb_currentSystem;
+		
+		// if (crumb_currentSystem.toString().startsWith("ReduceByKey")) crumb_currentSystem.getGraphic().setStyle(value);
 
+		for (NodeFx node : currentSystem.getNodes())
+			if (node.getFromRDD().size() == 0)
+        		node.setColor(Color.CRIMSON);
+        	else
+        		node.setColor(Color.DEEPSKYBLUE);
+		
 		setCurrentSystem(currentSystem.copy());
 
 		map_list.setValue("-");
 		reduce_list.setValue("-");
+		
+		done_button.setDisable(true);
 	}
 
 	private String condition = ">", value = "0";
@@ -222,7 +341,7 @@ public class SparkVisualizerController implements Initializable {
 	 */
 	private boolean openFilterOptions() throws IOException {
 		// Create the custom dialog.
-		Dialog<Pair<String, String>> dialog = new Dialog<>();
+		Dialog<String[]> dialog = new Dialog<>();
 		dialog.setTitle("Filter Options");
 
 		dialog.getDialogPane().getButtonTypes().addAll(ButtonType.APPLY, ButtonType.CANCEL);
@@ -254,53 +373,18 @@ public class SparkVisualizerController implements Initializable {
 		dialog.setResultConverter(
 				dialogButton -> 
 				dialogButton == ButtonType.APPLY ? 
-						new Pair<>(condition.getValue(), value.getText()) : 
+						new String[] { condition.getValue(), value.getText() } : 
 							null
 				);
 
-		Optional<Pair<String, String>> result = dialog.showAndWait();
+		Optional<String[]> result = dialog.showAndWait();
 
 		result.ifPresent(
 				conditionValue -> {
-					this.condition = conditionValue.getKey();
-					this.value = conditionValue.getValue();
+					this.condition = conditionValue[0];
+					this.value = conditionValue[1];
 				}
 				);
-
-		return result.isPresent();
-	}
-
-	private boolean openReduceByKeyOptions() {
-		// Create the custom dialog.
-		Dialog<Pair<String, String>> dialog = new Dialog<>();
-		dialog.setTitle("ReduceByKey Options");
-
-		dialog.getDialogPane().getButtonTypes().addAll(ButtonType.APPLY, ButtonType.CANCEL);
-
-		GridPane grid = new GridPane();
-		grid.setHgap(10);
-		grid.setVgap(10);
-		grid.setPadding(new Insets(20, 150, 10, 10));
-
-		TextField value = new TextField();
-		ComboBox<String> operations = new ComboBox<>();
-
-		operations.getItems().addAll(Arrays.copyOf(reduce_operations, reduce_operations.length-1));
-
-		operations.setValue(reduce_operations[0]);
-
-		grid.add(new Label("Operation:"), 0, 0);
-		grid.add(operations, 1, 0);
-
-		dialog.getDialogPane().setContent(grid);
-
-		// Convert the result to a condition-value pair when the OK button is clicked.
-		dialog.setResultConverter(dialogButton -> dialogButton == ButtonType.APPLY ? 
-				new Pair<>(operations.getValue(), value.getText()) : null);
-
-		Optional<Pair<String, String>> result = dialog.showAndWait();
-
-		result.ifPresent(operation -> this.operation = operations.getValue());
 
 		return result.isPresent();
 	}
@@ -309,7 +393,7 @@ public class SparkVisualizerController implements Initializable {
 	 * Resets all the structures.
 	 */
 	public void reset() {		
-		setCurrentSystem(new DistributedSystemFx(Integer.parseInt(executors.getText()), 
+		setCurrentSystem(new DistributedSystemFx(Integer.parseInt(nodes.getText()), 
 				Integer.parseInt(blocksize.getText())));
 	}
 
@@ -322,7 +406,7 @@ public class SparkVisualizerController implements Initializable {
 
 		reduce_list.getItems().add("-");
 		reduce_list.getItems().addAll(reduce_operations);
-
+		
 		map_list.setValue("-");
 		reduce_list.setValue("-");
 
@@ -336,6 +420,8 @@ public class SparkVisualizerController implements Initializable {
 		valuetype.getItems().add("String");
 		valuetype.getItems().add("Integer");
 		valuetype.getItems().add("Double");
+		
+		done_button.setDisable(true);
 
 		// initialize the zoom and speed sliders
 
@@ -355,6 +441,7 @@ public class SparkVisualizerController implements Initializable {
 				(event) -> {
 					selectedStage = event.getSelectedCrumb();
 					setCurrentSystem(selectedStage.getValue().copy());
+					done_button.setDisable(true);
 				}
 				);
 	}
@@ -399,8 +486,8 @@ public class SparkVisualizerController implements Initializable {
 		blocksize.setText(b);
 	}
 
-	public void setExecutors(String e) {
-		executors.setText(e);
+	public void setNodes(String e) {
+		nodes.setText(e);
 	}
 
 	public void setKeytype(String k) {
@@ -430,9 +517,9 @@ public class SparkVisualizerController implements Initializable {
 	public void initSystem() {
 		// initialize working system
 
-		orchestrator = new Orchestrator(Integer.parseInt(executors.getText()));
+		orchestrator = new Orchestrator(Integer.parseInt(nodes.getText()));
 
-		currentSystem = new DistributedSystemFx(Integer.parseInt(executors.getText()), 
+		currentSystem = new DistributedSystemFx(Integer.parseInt(nodes.getText()), 
 				Integer.parseInt(blocksize.getText()));
 
 		canvas.getChildren().add(currentSystem);

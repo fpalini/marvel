@@ -19,15 +19,19 @@
 <?import javafx.scene.layout.VBox?>
 <?import org.controlsfx.control.BreadCrumbBar?>
 
-<BorderPane prefHeight="600.0" prefWidth="1050.0" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1" fx:controller="spark_visualizer.visualization.SparkVisualizerController">
+<BorderPane prefHeight="600.0" prefWidth="1050.0" xmlns="http://javafx.com/javafx/10.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="spark_visualizer.visualization.SparkVisualizerController">
    <bottom>
       <ToolBar>
         <items>
-            <Label text="Map" />
+            <Button mnemonicParsing="false" onAction="#generate" prefWidth="65.0" text="Generate" translateX="5.0" />
+            <Label text="Map">
+               <padding>
+                  <Insets left="20.0" />
+               </padding></Label>
             <ComboBox fx:id="map_list" prefWidth="100.0" />
             <Label text="Reduce">
                <padding>
-                  <Insets left="20.0" />
+                  <Insets left="10.0" />
                </padding></Label>
             <ComboBox fx:id="reduce_list" prefWidth="100.0" />
             <Separator orientation="VERTICAL" prefHeight="0.0" prefWidth="2.0">
@@ -35,8 +39,7 @@
                   <Insets left="5.0" right="5.0" />
                </padding>
             </Separator>
-          <Button mnemonicParsing="false" onAction="#compute" text="Compute" />
-            <Button mnemonicParsing="false" onAction="#generate" text="Generate" translateX="10.0" />
+          <Button fx:id="run_button" mnemonicParsing="false" onAction="#run" prefWidth="65.0" text="Run" />
             <Label fx:id="zoom_label" text="1.0x">
                <padding>
                   <Insets left="20.0" />
@@ -62,7 +65,7 @@
                   </Slider>
                </children>
             </VBox>
-            <Button mnemonicParsing="false" onAction="#done" text="Done" />
+            <Button fx:id="done_button" mnemonicParsing="false" onAction="#done" prefWidth="65.0" text="Done" />
             <Separator orientation="VERTICAL">
                <padding>
                   <Insets left="5.0" right="5.0" />
@@ -97,7 +100,7 @@
                                           <Insets right="19.0" />
                                        </HBox.margin>
                                     </Label>
-                                    <TextField fx:id="datasize" translateX="35.0" translateY="5.0">
+                                    <TextField fx:id="datasize" translateX="15.0" translateY="5.0">
                                        <HBox.margin>
                                           <Insets />
                                        </HBox.margin>
@@ -111,13 +114,13 @@
                                           <Insets right="13.0" />
                                        </HBox.margin>
                                     </Label>
-                                    <TextField fx:id="blocksize" translateX="35.0" translateY="5.0" />
+                                    <TextField fx:id="blocksize" translateX="15.0" translateY="5.0" />
                                  </children>
                               </HBox>
                               <HBox>
                                  <children>
-                                    <Label text="# Executors:" translateX="10.0" translateY="10.0" />
-                                    <TextField fx:id="executors" translateX="35.0" translateY="5.0" />
+                                    <Label text="# Nodes:" translateX="10.0" translateY="10.0" />
+                                    <TextField fx:id="nodes" translateX="35.0" translateY="5.0" />
                                  </children>
                               </HBox>
                               <HBox>

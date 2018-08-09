@@ -14,7 +14,7 @@ public class Main extends Application {
 	
 	private static String datasize;
 	private static String blocksize;
-	private static String executors;
+	private static String nodes;
 	private static String keytype;
 	private static String valuetype;
 	private static String input;
@@ -34,7 +34,7 @@ public class Main extends Application {
 			if (input != null) controller.setFile(input);
 			controller.setDatasize(datasize);
 			controller.setBlocksize(blocksize);
-			controller.setExecutors(executors);
+			controller.setNodes(nodes);
 			controller.setKeytype(keytype);
 			controller.setValuetype(valuetype);
 			controller.setSplit(split);
@@ -60,7 +60,7 @@ public class Main extends Application {
         Option option_array[] = new Option[] { 
         		new Option("d", "datasize", true, "size of the random dataset"),
         		new Option("b", "blocksize", true, "size of each block inside the system"),
-        		new Option("e", "executors", true, "number of executors inside the system"),
+        		new Option("n", "nodes", true, "number of nodes inside the system"),
         		new Option("k", "keytype", true, "type of the key of the random dataset"),
         		new Option("v", "valuetype", true, "type of the value of the random dataset"),
         		new Option("i", "input", true, "dataset file path"),
@@ -88,7 +88,7 @@ public class Main extends Application {
 		
         datasize = cmd.getOptionValue("d", "90");
         blocksize = cmd.getOptionValue("b", "3");
-        executors = cmd.getOptionValue("e", "8");
+        nodes = cmd.getOptionValue("n", "8");
         keytype = cmd.getOptionValue("k", "String");
         valuetype = cmd.getOptionValue("v", "Integer");
         input = cmd.getOptionValue("i");

@@ -1,12 +1,13 @@
 package spark_visualizer.visualization.sparkfx;
 
 import javafx.animation.Transition;
+import javafx.collections.ListChangeListener;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 
-public class ExecutorFx extends Group {
+public class NodeFx extends Group {
 
     public static final double RDD_PADDING = 10;
     public static final double WIDTH = RDD_PADDING + 2 * (RDD_PADDING + 2 * FieldFx.WIDTH);
@@ -15,7 +16,7 @@ public class ExecutorFx extends Group {
     private Rectangle container;
     private RDDPartitionFx fromRDD, toRDD;
 
-    public ExecutorFx(double x, double y) {
+    public NodeFx(double x, double y) {
 
         height = width = WIDTH;
 
@@ -43,26 +44,27 @@ public class ExecutorFx extends Group {
     }
 
 
-    public ExecutorFx copy() {
-        ExecutorFx executor = new ExecutorFx(getLayoutX(), getLayoutY());
+    public NodeFx copy() {
+        NodeFx node = new NodeFx(getLayoutX(), getLayoutY());
         
-        executor.fromRDD.setBlocksize(fromRDD.getBlocksize());
-        executor.toRDD.setBlocksize(toRDD.getBlocksize());
+        node.fromRDD.setBlocksize(fromRDD.getBlocksize());
+        node.toRDD.setBlocksize(toRDD.getBlocksize());
+        node.setColor((Color) container.getFill());
 
         for (RecordFx record : fromRDD.getRecords())
-        	executor.addRecordFromRDD(record.copy());
+        	node.addRecordFromRDD(record.copy());
         
         for (RecordFx record : toRDD.getRecords())
-        	executor.addRecordToRDD(record.copy());
+        	node.addRecordToRDD(record.copy());
 
-        return executor;
+        return node;
     }
     
     public Transition addRecordFromRDD(RecordFx record) {
     	// record.setVisible(false);
     	fromRDD.addRecord(record);
     	
-    	updateExecutorHeight();
+    	updateNodeHeight();
     	
     	// record.getFadeIn().setOnFinished((event) -> record.setVisible(true));
     	
@@ -73,7 +75,7 @@ public class ExecutorFx extends Group {
     	// record.setVisible(false);
     	toRDD.addRecord(record);
     	
-    	updateExecutorHeight();
+    	updateNodeHeight();
     	
     	// record.getFadeIn().setOnFinished((event) -> record.setVisible(true));
     	
@@ -83,12 +85,12 @@ public class ExecutorFx extends Group {
     public Transition removeRecordToRDD(RecordFx record) {
     	toRDD.removeRecord(record);
     	
-    	updateExecutorHeight();
+    	updateNodeHeight();
     	
     	return record.getFadeOut();
     }
     
-    private void updateExecutorHeight() {
+    private void updateNodeHeight() {
     	double maxHeight = 0;
     	RDDPartitionFx rdd;
     	
@@ -148,10 +150,15 @@ public class ExecutorFx extends Group {
 		container.setWidth(WIDTH);
 		width = WIDTH;
 		
-		updateExecutorHeight();
+		updateNodeHeight();
 	}
 	
 	public void recomputeHeight() {
 		
+	}
+
+
+	public void setColor(Color c) {
+		container.setFill(c);
 	}
 }
