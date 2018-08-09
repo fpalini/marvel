@@ -16,10 +16,8 @@ import spark_visualizer.mapreduce.MapReduceAlgo;
 
 public class Orchestrator {
 	private MapReduceAlgo mapReduceAlgo;
-	private int nExecutors;
 	
 	public Orchestrator(int nExecutors) {
-		this.nExecutors = nExecutors;
 		mapReduceAlgo = new MapReduceAlgo(nExecutors); // setup of the Spark system
 	}
 	
@@ -39,9 +37,11 @@ public class Orchestrator {
 	        while((line = reader.readLine()) != null && el_counter++ < size) {
 	        	key_value_line = line.split(split_char);
 	        	
+	        	if (key_value_line[0].equals("")) break;
+	        	
 	        	if (key_value_line.length > 1) {
-	        		key = key_column == 0 ? null : key_value_line[key_column-1];
-		        	value = key_value_line[value_column-1]; 
+	        		key = key_column == 0 ? null : key_value_line[key_column-1].trim();
+		        	value = key_value_line[value_column-1].trim(); 
 	        	}
 	        	else
 	        		value = key_value_line[0];

@@ -8,11 +8,25 @@ import javafx.scene.Node;
 public class RDDPartitionFx extends Group {
 	
 	public static double BLOCK_PADDING = 10;
-	public static double WIDTH = 2 * FieldFx.WIDTH;
+	public static double DEFAULT_WIDTH = 2 * FieldFx.WIDTH;
 	private double height;
-
+	private int blocksize;
 	
-	public void addBlock(BlockFx block) {
+	
+	public void addRecord(RecordFx record) {
+		BlockFx lastBlock = size() == 0 ? null : (BlockFx) getChildren().get(size()-1);
+		if (lastBlock != null && lastBlock.size() < blocksize) {
+			lastBlock.addRecord(record);
+			height += RecordFx.HEIGHT;
+		}
+		else {
+			BlockFx newBlock = new BlockFx();
+			newBlock.addRecord(record);
+			addBlock(newBlock);
+		}
+	}
+	
+	private void addBlock(BlockFx block) {
 		int nBlocks = getNumBlocks();
 
         if (nBlocks > 0) {
@@ -24,19 +38,6 @@ public class RDDPartitionFx extends Group {
         else height = block.height();
 
         getChildren().add(block);
-    }
-	
-	public void removeBlock(int index) {
-		BlockFx block = (BlockFx) getChildren().remove(index);
-		height -= getNumBlocks() == 1 ? block.height() : BLOCK_PADDING + block.height();
-		
-		if (index < getChildren().size())
-            // there is a another block after the deleted one
-            for (int i = index; i < getChildren().size(); i++) {
-                // move up all the blocks after the deleted one
-                getChildren().get(i).setLayoutY(-(BLOCK_PADDING + block.height()));
-                block = (BlockFx) getChildren().get(i);
-            }
     }
 
     public ArrayList<BlockFx> getBlocks() {
@@ -80,5 +81,37 @@ public class RDDPartitionFx extends Group {
     	s += getChildren().get(size()-1) + "}";
     	
     	return s;
+	}
+	
+	public void setBlocksize(int b) {
+		blocksize = b;
+	}
+
+	public int getBlocksize() {
+		return blocksize;
+	}
+	
+	public RDDPartitionFx copy() {
+		RDDPartitionFx rdd = new RDDPartitionFx();
+		
+		for (BlockFx block : getBlocks())
+			rdd.addBlock(block);
+		
+		rdd.setBlocksize(blocksize);
+		
+		return rdd;
+	}
+
+	public void removeRecord(RecordFx record) {
+		getChildren().remove(record);
+		
+		BlockFx block;
+		
+		for (Node n : getChildren()) {
+			block = (BlockFx) n;
+			
+			if (block.contains(record))
+				block.removeRecord(record);
+		}
 	}
 }

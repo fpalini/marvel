@@ -1,7 +1,5 @@
 package spark_visualizer.visualization.sparkfx;
 
-import static spark_visualizer.visualization.sparkfx.FieldFx.ANIMATION_MS;
-
 import javafx.animation.FadeTransition;
 import javafx.animation.ParallelTransition;
 import javafx.animation.Transition;
@@ -22,12 +20,17 @@ public class RecordFx extends HBox {
     private FieldFx key, value;
     private double width;
     private FadeTransition fadeIn;
+    private FadeTransition fadeOut;
     
 
     public RecordFx(String k, String v) {
-        fadeIn = new FadeTransition(Duration.millis(ANIMATION_MS), this);
+        fadeIn = new FadeTransition(Duration.millis(2 * FieldFx.ANIMATION_MS), this);
         fadeIn.setFromValue(0.0);
         fadeIn.setToValue(1.0);
+        
+        fadeOut = new FadeTransition(Duration.millis(2 * FieldFx.ANIMATION_MS), this);
+        fadeOut.setFromValue(1.0);
+        fadeOut.setToValue(0.0);
 
         value = new FieldFx(v);
         width = FieldFx.WIDTH;
@@ -69,6 +72,8 @@ public class RecordFx extends HBox {
     
     public FadeTransition getFadeIn() { return fadeIn; }
     
+    public FadeTransition getFadeOut() { return fadeOut; }
+    
     public double width() { return width; }
     
     public double height() { return HEIGHT; }
@@ -89,5 +94,13 @@ public class RecordFx extends HBox {
     @Override
     public String toString() {
     	return "(" + (key != null? key.toString() + ", " : "") + value.toString() + ")";
+    }
+    
+    public void swap() {
+    	value.toBack();
+    	
+    	FieldFx tmp = key;
+    	key = value;
+    	value = tmp;
     }
 }

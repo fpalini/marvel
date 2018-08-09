@@ -104,4 +104,14 @@ public class BlockFx extends Group {
     	
     	return s;
     }
+
+
+	public boolean contains(RecordFx record) {
+		return getChildren().contains(record);
+	}
+
+
+	public void removeRecord(RecordFx record) {
+		getChildren().remove(record);
+	}
 }

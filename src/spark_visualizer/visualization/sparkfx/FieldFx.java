@@ -5,6 +5,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 import javafx.animation.FillTransition;
+import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tooltip;
 
@@ -14,18 +15,18 @@ import javafx.scene.control.Tooltip;
  * @author Francesco Palini
  */
 
-public class FieldFx extends StackPane {
+public class FieldFx extends StackPane implements Comparable<FieldFx> {
 
-	/**
-     * Time in ms for the animations.
-     */
-    static public final int ANIMATION_MS = 500;
-	
-    public static final double WIDTH = 60, HEIGHT = 20;
+	public static final double WIDTH = 60, HEIGHT = 20;
 
     private Label text;
     private Rectangle cell;
     private FillTransition colorChange;
+
+	/**
+	 * Time in ms for the animations.
+	 */
+	static public int ANIMATION_MS = 350;
     
 
     public FieldFx(String value) {
@@ -45,6 +46,7 @@ public class FieldFx extends StackPane {
         setPrefHeight(HEIGHT);
     }
 
+    public void setText(String s) { text.setText(s); }
     
     public Label getLabel() { return text; }
     
@@ -56,4 +58,18 @@ public class FieldFx extends StackPane {
     
     @Override
     public String toString() { return text.getText(); }
+    
+    @Override
+    public boolean equals(Object o) {
+    	return ((FieldFx) o).text.getText().equals(text.getText());
+    }
+
+	public Node getCell() {
+		return cell;
+	}
+	
+	@Override
+	public int compareTo(FieldFx f) {
+		return toString().compareTo(f.toString());
+	}
 }
