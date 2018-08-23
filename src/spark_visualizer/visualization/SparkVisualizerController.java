@@ -59,6 +59,8 @@ public class SparkVisualizerController implements Initializable {
 
 	@FXML
 	private TextField datasize, blocksize, nodes;
+	
+	private int rowsize;
 
 	private File input_file;
 
@@ -99,6 +101,8 @@ public class SparkVisualizerController implements Initializable {
         		node.setColor(Color.DEEPSKYBLUE);
 
 		setCurrentSystem(currentSystem.copy());
+		
+		run_button.setDisable(false);
 	}
 
 	/**
@@ -139,34 +143,48 @@ public class SparkVisualizerController implements Initializable {
 				node.getToRDD().clear();
 
 		// Execution after an aggregation (not by key) not permitted
-		for (String op : Arrays.copyOf(reduce_operations, reduce_operations.length-1))
-			if (selectedStage.getValue().toString().equals(op)) {
+		for (String op : reduce_operations)
+			if (!op.startsWith("ReduceByKey") && selectedStage.getValue().toString().equals(op)) {
 				DistributedSystemFx.warning("End of Execution!");
 				return;
 			}
+		
+		if (currentSystem.getDoneButton() == null) currentSystem.setDoneButton(done_button);
 
 		switch (map_function) {
 		case "Swap":
 			currentSystem.swap();
-			currentSystem.getCurrentTransition().setOnFinished(event -> done_button.setDisable(false));
-			currentSystem.getCurrentTransition().setRate(speed_value);
+			currentSystem.setRate(speed_value);
 			currentSystem.getCurrentTransition().play();
 			currentSystem.setSystemName("Swap");
 			break;
 		case "FilterOnKey":
 			if (openFilterOptions()) {
+				if (condition.equals(">") || condition.equals("<"))
+					for (NodeFx node : currentSystem.getNodes()) {
+						try {
+							for (RecordFx record : node.getFromRDD().getRecords()) 
+								Double.parseDouble(record.getKey().toString());
+						} catch (NumberFormatException n) { DistributedSystemFx.warning("Values must be numbers!"); return; }
+					}
+				
 				currentSystem.filter(condition, value, true);
-				currentSystem.getCurrentTransition().setOnFinished(event -> done_button.setDisable(false));
-				currentSystem.getCurrentTransition().setRate(speed_value);
+				currentSystem.setRate(speed_value);
 				currentSystem.getCurrentTransition().play();
 				currentSystem.setSystemName("FilterOnKey");
 			}
 			break;
 		case "FilterOnValue":
 		if (openFilterOptions()) {
+			if (condition.equals(">") || condition.equals("<"))
+				for (NodeFx node : currentSystem.getNodes()) {
+					try {
+						for (RecordFx record : node.getFromRDD().getRecords()) 
+							Double.parseDouble(record.getValue().toString());
+					} catch (NumberFormatException n) { DistributedSystemFx.warning("Values must be numbers!"); return; }
+				}
 			currentSystem.filter(condition, value, false);
-			currentSystem.getCurrentTransition().setOnFinished(event -> done_button.setDisable(false));
-			currentSystem.getCurrentTransition().setRate(speed_value);
+			currentSystem.setRate(speed_value);
 			currentSystem.getCurrentTransition().play();
 			currentSystem.setSystemName("FilterOnValue");
 		}
@@ -176,8 +194,7 @@ public class SparkVisualizerController implements Initializable {
 		switch (reduce_function) {
 		case "Count":
 			currentSystem.count(false);
-			currentSystem.getCurrentTransition().setOnFinished(event -> done_button.setDisable(false));
-			currentSystem.getCurrentTransition().setRate(speed_value);
+			currentSystem.setRate(speed_value);
 			currentSystem.getCurrentTransition().play();
 			currentSystem.setSystemName("Count");
 			break;
@@ -190,8 +207,7 @@ public class SparkVisualizerController implements Initializable {
 				} catch (NumberFormatException n) { DistributedSystemFx.warning("Values must be numbers!"); return; }
 			}
 			currentSystem.min(false, true);
-			currentSystem.getCurrentTransition().setOnFinished(event -> done_button.setDisable(false));
-			currentSystem.getCurrentTransition().setRate(speed_value);
+			currentSystem.setRate(speed_value);
 			currentSystem.getCurrentTransition().play();
 			currentSystem.setSystemName("MinOnKey");
 			break;
@@ -203,8 +219,7 @@ public class SparkVisualizerController implements Initializable {
 				} catch (NumberFormatException n) { DistributedSystemFx.warning("Values must be numbers!"); return; }
 			}
 			currentSystem.min(false, false);
-			currentSystem.getCurrentTransition().setOnFinished(event -> done_button.setDisable(false));
-			currentSystem.getCurrentTransition().setRate(speed_value);
+			currentSystem.setRate(speed_value);
 			currentSystem.getCurrentTransition().play();
 			currentSystem.setSystemName("MinOnValue");
 			break;
@@ -217,8 +232,7 @@ public class SparkVisualizerController implements Initializable {
 				} catch (NumberFormatException n) { DistributedSystemFx.warning("Values must be numbers!"); return; }
 			}
 			currentSystem.max(false, true);
-			currentSystem.getCurrentTransition().setOnFinished(event -> done_button.setDisable(false));
-			currentSystem.getCurrentTransition().setRate(speed_value);
+			currentSystem.setRate(speed_value);
 			currentSystem.getCurrentTransition().play();
 			currentSystem.setSystemName("MaxOnKey");
 			break;
@@ -230,8 +244,7 @@ public class SparkVisualizerController implements Initializable {
 				} catch (NumberFormatException n) { DistributedSystemFx.warning("Values must be numbers!"); return; }
 			}
 			currentSystem.max(false, false);
-			currentSystem.getCurrentTransition().setOnFinished(event -> done_button.setDisable(false));
-			currentSystem.getCurrentTransition().setRate(speed_value);
+			currentSystem.setRate(speed_value);
 			currentSystem.getCurrentTransition().play();
 			currentSystem.setSystemName("MaxOnValue");
 			break;
@@ -243,9 +256,8 @@ public class SparkVisualizerController implements Initializable {
 						Double.parseDouble(record.getKey().toString());
 				} catch (NumberFormatException n) { DistributedSystemFx.warning("Values must be numbers!"); return; }
 			}
-			currentSystem.sum(false, true);
-			currentSystem.getCurrentTransition().setOnFinished(event -> done_button.setDisable(false));
-			currentSystem.getCurrentTransition().setRate(speed_value);
+			currentSystem.sum(false, true, false);
+			currentSystem.setRate(speed_value);
 			currentSystem.getCurrentTransition().play();
 			currentSystem.setSystemName("SumOnKey");
 			break;
@@ -256,16 +268,15 @@ public class SparkVisualizerController implements Initializable {
 						Double.parseDouble(record.getValue().toString());
 				} catch (NumberFormatException n) { DistributedSystemFx.warning("Values must be numbers!"); return; }
 			}
-			currentSystem.sum(false, false);
-			currentSystem.getCurrentTransition().setOnFinished(event -> done_button.setDisable(false));
-			currentSystem.getCurrentTransition().setRate(speed_value);
+			currentSystem.sum(false, false, false);
+			currentSystem.setRate(speed_value);
 			currentSystem.getCurrentTransition().play();
 			currentSystem.setSystemName("SumOnValue");
 			break;
 			
 		case "ReduceByKey + Count":
 			currentSystem.reduceByKey(operation, done_button);
-			currentSystem.getCurrentTransition().setRate(speed_value);
+			currentSystem.setRate(speed_value);
 			currentSystem.getCurrentTransition().play();
 			currentSystem.setSystemName("ReduceByKey + Count");
 			break;
@@ -273,21 +284,21 @@ public class SparkVisualizerController implements Initializable {
 		
 		case "ReduceByKey + Min":
 			currentSystem.reduceByKey(operation, done_button);
-			currentSystem.getCurrentTransition().setRate(speed_value);
+			currentSystem.setRate(speed_value);
 			currentSystem.getCurrentTransition().play();
 			currentSystem.setSystemName("ReduceByKey + Min");
 			break;
 		
 		case "ReduceByKey + Max":
 			currentSystem.reduceByKey(operation, done_button);
-			currentSystem.getCurrentTransition().setRate(speed_value);
+			currentSystem.setRate(speed_value);
 			currentSystem.getCurrentTransition().play();
 			currentSystem.setSystemName("ReduceByKey + Max");
 			break;
 			
 		case "ReduceByKey + Sum":
 			currentSystem.reduceByKey(operation, done_button);
-			currentSystem.getCurrentTransition().setRate(speed_value);
+			currentSystem.setRate(speed_value);
 			currentSystem.getCurrentTransition().play();
 			currentSystem.setSystemName("ReduceByKey + Sum");
 			break;
@@ -394,7 +405,7 @@ public class SparkVisualizerController implements Initializable {
 	 */
 	public void reset() {		
 		setCurrentSystem(new DistributedSystemFx(Integer.parseInt(nodes.getText()), 
-				Integer.parseInt(blocksize.getText())));
+				Integer.parseInt(blocksize.getText()), rowsize));
 	}
 
 	@Override
@@ -422,6 +433,7 @@ public class SparkVisualizerController implements Initializable {
 		valuetype.getItems().add("Double");
 		
 		done_button.setDisable(true);
+		run_button.setDisable(true);
 
 		// initialize the zoom and speed sliders
 
@@ -452,7 +464,7 @@ public class SparkVisualizerController implements Initializable {
 		speed_value = value;
 		
 		if (currentSystem.getCurrentTransition() != null) 
-			currentSystem.getCurrentTransition().setRate(speed_value);
+			currentSystem.setRate(speed_value);
 	}
 
 	private void zoom(double value) {
@@ -520,8 +532,12 @@ public class SparkVisualizerController implements Initializable {
 		orchestrator = new Orchestrator(Integer.parseInt(nodes.getText()));
 
 		currentSystem = new DistributedSystemFx(Integer.parseInt(nodes.getText()), 
-				Integer.parseInt(blocksize.getText()));
+				Integer.parseInt(blocksize.getText()), rowsize);
 
 		canvas.getChildren().add(currentSystem);
+	}
+
+	public void setRowsize(int rowsize) {
+		this.rowsize = rowsize;
 	}
 }

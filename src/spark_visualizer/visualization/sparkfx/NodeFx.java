@@ -108,6 +108,7 @@ public class NodeFx extends Group {
     public RDDPartitionFx getFromRDD() { return fromRDD; }
     public RDDPartitionFx getToRDD() { return toRDD; }
 
+    int n = 0;
 
 	public RDDPartitionFx addTempRDD() {
 		RDDPartitionFx temp = new RDDPartitionFx();
@@ -120,8 +121,8 @@ public class NodeFx extends Group {
 		
 		getChildren().add(temp);
 		
-		container.setWidth(WIDTH + RDD_PADDING + 2 * FieldFx.WIDTH);
-		width = WIDTH + RDD_PADDING + 2 * FieldFx.WIDTH;
+		container.setWidth(container.getWidth() + RDD_PADDING + 2 * FieldFx.WIDTH);
+		width = container.getWidth();
 		
 		return temp;
 	}
@@ -143,12 +144,12 @@ public class NodeFx extends Group {
 
 
 	public void removeTempRDD(RDDPartitionFx temp) {		
-		toRDD.setLayoutX(temp.getLayoutX());
+		toRDD.setLayoutX(toRDD.getLayoutX() - (RDD_PADDING + 2 * FieldFx.WIDTH));
 		
 		getChildren().remove(temp);
 		
-		container.setWidth(WIDTH);
-		width = WIDTH;
+		container.setWidth(container.getWidth() - (RDD_PADDING + 2 * FieldFx.WIDTH));
+		width = container.getWidth();
 		
 		updateNodeHeight();
 	}

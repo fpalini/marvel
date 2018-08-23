@@ -21,6 +21,7 @@ public class Main extends Application {
 	private static String split;
 	private static String keycol;
 	private static String valuecol;
+	private static int rowsize;
 	
 
 	@Override
@@ -40,6 +41,7 @@ public class Main extends Application {
 			controller.setSplit(split);
 			controller.setKeycol(keycol);
 			controller.setValuecol(valuecol);
+			controller.setRowsize(rowsize);
 			controller.initSystem();
 			
 			Scene scene = new Scene(root);
@@ -66,7 +68,8 @@ public class Main extends Application {
         		new Option("i", "input", true, "dataset file path"),
         		new Option("s", "split", true, "dataset file path"),
         		new Option("K", "keycol", true, "column number of the key inside the dataset file"),
-        		new Option("V", "valuecol", true, "column number of the value inside the dataset file")
+        		new Option("V", "valuecol", true, "column number of the value inside the dataset file"),
+        		new Option("r", "rowsize", true, "maximum number of nodes per row")
         };
         
         for (Option option : option_array) options.addOption(option);        
@@ -95,6 +98,7 @@ public class Main extends Application {
         split = cmd.getOptionValue("s", ",");
         keycol = cmd.getOptionValue("K", "1");
 		valuecol = cmd.getOptionValue("V", "2");
+		rowsize = Integer.parseInt(cmd.getOptionValue("r", "6"));
 		
 		launch(args);
 	}
