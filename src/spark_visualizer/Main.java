@@ -60,7 +60,8 @@ public class Main extends Application {
 		Options options = new Options();
 
         Option option_array[] = new Option[] { 
-        		new Option("d", "datasize", true, "size of the random dataset"),
+        		new Option("d", "datasize", true, "size of the dataset. "
+        				+ "If -1 when input is specified, the program reads all the records."),
         		new Option("b", "blocksize", true, "size of each block inside the system"),
         		new Option("n", "nodes", true, "number of nodes inside the system"),
         		new Option("k", "keytype", true, "type of the key of the random dataset"),

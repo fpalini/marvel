@@ -17,7 +17,7 @@ import javafx.scene.control.Tooltip;
 
 public class FieldFx extends StackPane implements Comparable<FieldFx> {
 
-	public static final double WIDTH = 60, HEIGHT = 20;
+	public static final double WIDTH = 120, HEIGHT = 20;
 
     private Label text;
     private Rectangle cell;

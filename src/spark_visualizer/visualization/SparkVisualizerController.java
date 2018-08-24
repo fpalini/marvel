@@ -3,12 +3,10 @@ package spark_visualizer.visualization;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
-import javafx.animation.Transition;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
@@ -19,7 +17,6 @@ import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
-import javafx.util.Pair;
 import scala.Tuple2;
 import spark_visualizer.orchestrator.Orchestrator;
 import spark_visualizer.visualization.sparkfx.DistributedSystemFx;
@@ -27,6 +24,8 @@ import spark_visualizer.visualization.sparkfx.NodeFx;
 import spark_visualizer.visualization.sparkfx.RecordFx;
 
 import org.controlsfx.control.BreadCrumbBar;
+
+import impl.org.controlsfx.skin.BreadCrumbBarSkin.BreadCrumbButton;
 
 public class SparkVisualizerController implements Initializable {
 
@@ -96,9 +95,9 @@ public class SparkVisualizerController implements Initializable {
 		
 		for (NodeFx node : currentSystem.getNodes())
 			if (node.getFromRDD().size() == 0)
-        		node.setColor(Color.CRIMSON);
+        		node.setColor(new Color(255/255.0, 128/255.0, 128/255.0, 1));
         	else
-        		node.setColor(Color.DEEPSKYBLUE);
+        		node.setColor(new Color(179/255.0, 255/255.0, 179/255.0, 1));
 
 		setCurrentSystem(currentSystem.copy());
 		
@@ -278,7 +277,7 @@ public class SparkVisualizerController implements Initializable {
 			currentSystem.reduceByKey(operation, done_button);
 			currentSystem.setRate(speed_value);
 			currentSystem.getCurrentTransition().play();
-			currentSystem.setSystemName("ReduceByKey + Count");
+			currentSystem.setSystemName("RBK + Count");
 			break;
 		
 		
@@ -286,21 +285,21 @@ public class SparkVisualizerController implements Initializable {
 			currentSystem.reduceByKey(operation, done_button);
 			currentSystem.setRate(speed_value);
 			currentSystem.getCurrentTransition().play();
-			currentSystem.setSystemName("ReduceByKey + Min");
+			currentSystem.setSystemName("RBK + Min");
 			break;
 		
 		case "ReduceByKey + Max":
 			currentSystem.reduceByKey(operation, done_button);
 			currentSystem.setRate(speed_value);
 			currentSystem.getCurrentTransition().play();
-			currentSystem.setSystemName("ReduceByKey + Max");
+			currentSystem.setSystemName("RBK + Max");
 			break;
 			
 		case "ReduceByKey + Sum":
 			currentSystem.reduceByKey(operation, done_button);
 			currentSystem.setRate(speed_value);
 			currentSystem.getCurrentTransition().play();
-			currentSystem.setSystemName("ReduceByKey + Sum");
+			currentSystem.setSystemName("RBK + Sum");
 			break;
 		}
 		
@@ -313,6 +312,13 @@ public class SparkVisualizerController implements Initializable {
 	 */
 	@FXML
 	void done() {
+		if (currentSystem.toString().startsWith("RBK")) {
+			for (NodeFx node : currentSystem.getNodes())
+				node.removeTempRDDs();
+			
+			currentSystem.relocate();
+		}
+		
 		int numVoid = 0;
 		for (NodeFx node : currentSystem.getNodes())
 			if (node.getToRDD().size() == 0) numVoid++;
@@ -328,13 +334,11 @@ public class SparkVisualizerController implements Initializable {
 		stages.setSelectedCrumb(crumb_currentSystem);
 		selectedStage = crumb_currentSystem;
 		
-		// if (crumb_currentSystem.toString().startsWith("ReduceByKey")) crumb_currentSystem.getGraphic().setStyle(value);
-
 		for (NodeFx node : currentSystem.getNodes())
 			if (node.getFromRDD().size() == 0)
-        		node.setColor(Color.CRIMSON);
+        		node.setColor(new Color(255/255.0, 128/255.0, 128/255.0, 1));
         	else
-        		node.setColor(Color.DEEPSKYBLUE);
+        		node.setColor(new Color(179/255.0, 255/255.0, 179/255.0, 1));
 		
 		setCurrentSystem(currentSystem.copy());
 
@@ -454,8 +458,17 @@ public class SparkVisualizerController implements Initializable {
 					selectedStage = event.getSelectedCrumb();
 					setCurrentSystem(selectedStage.getValue().copy());
 					done_button.setDisable(true);
-				}
-				);
+				});
+
+		stages.setCrumbFactory(crumb -> {
+				
+				BreadCrumbButton crumbButton = new BreadCrumbButton(crumb.getValue() != null ? crumb.getValue().toString() : "");
+				
+				if (crumb.getValue().toString().startsWith("RBK"))
+					crumbButton.setTextFill(Color.RED);
+				
+				return crumbButton;
+		});
 	}
 
 	private void speed(double value) {

@@ -33,8 +33,8 @@ public class Orchestrator {
 	        
 	        int el_counter = 0;
 	        String line, key_value_line[];
-        
-	        while((line = reader.readLine()) != null && el_counter++ < size) {
+	        
+	        while((line = reader.readLine()) != null && (size == -1 || el_counter++ < size)) {
 	        	key_value_line = line.split(split_char);
 	        	
 	        	if (key_value_line[0].equals("")) break;
@@ -61,6 +61,14 @@ public class Orchestrator {
 	public void createRandomRDD(String keyType, String valueType, int size) {		
 		Random rnd = new Random();
         ArrayList<Tuple2<String, String>> dataset = new ArrayList<>();
+        
+        if (size == -1)
+			try {
+				throw new Exception("Size cannot be -1 if the input file is not selected.");
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 
         String key = null;
         String value = null;

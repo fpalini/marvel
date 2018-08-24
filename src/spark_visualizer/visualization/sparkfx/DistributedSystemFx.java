@@ -467,21 +467,17 @@ public class DistributedSystemFx extends Group {
 					
 					for (NodeFx node : nodes)
 						if (node.getFromRDD().size() == 0)
-			        		node.setColor(Color.CRIMSON);
+			        		node.setColor(new Color(255/255.0, 128/255.0, 128/255.0, 1));
 			        	else
-			        		node.setColor(Color.DEEPSKYBLUE);
+			        		node.setColor(new Color(179/255.0, 255/255.0, 179/255.0, 1));
 					
 					Transition seqTransition = new SequentialTransition(operationToTransition(operation, false), new PauseTransition(Duration.millis(1000)));
 					seqTransition.setRate(speed);
 					currentTransition = seqTransition;
 					
 					seqTransition.setOnFinished((event) -> {
-						for (int n = 0; n < nNodes; n++) {
-							nodes.get(n).removeTempRDD(fromShuffle.get(n));
-							nodes.get(n).removeTempRDD(toShuffle.get(n));
+						for (int n = 0; n < nNodes; n++) 
 							nodes.get(n).setFromRDD(fromRDDs.get(n));
-							nodes.get(n).setToRDD(toRDDs.get(n));
-						}
 						
 						relocate();
 						

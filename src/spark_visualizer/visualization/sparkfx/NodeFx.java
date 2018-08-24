@@ -1,9 +1,7 @@
 package spark_visualizer.visualization.sparkfx;
 
 import javafx.animation.Transition;
-import javafx.collections.ListChangeListener;
 import javafx.scene.Group;
-import javafx.scene.Node;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 
@@ -22,7 +20,7 @@ public class NodeFx extends Group {
 
         container = new Rectangle(width, height);
 
-        container.setFill(Color.DEEPSKYBLUE);
+        container.setFill(new Color(179/255.0, 255/255.0, 179/255.0, 1));
         container.setStroke(Color.BLACK);
         container.setStrokeWidth(1);
         container.setArcHeight(25);
@@ -143,13 +141,13 @@ public class NodeFx extends Group {
 	}
 
 
-	public void removeTempRDD(RDDPartitionFx temp) {		
-		toRDD.setLayoutX(toRDD.getLayoutX() - (RDD_PADDING + 2 * FieldFx.WIDTH));
+	public void removeTempRDDs() {		
+		toRDD.setLayoutX(2 * (RDD_PADDING + FieldFx.WIDTH));
 		
-		getChildren().remove(temp);
+		getChildren().remove(3, getChildren().size());
 		
-		container.setWidth(container.getWidth() - (RDD_PADDING + 2 * FieldFx.WIDTH));
-		width = container.getWidth();
+		container.setWidth(WIDTH);
+		width = WIDTH;
 		
 		updateNodeHeight();
 	}
