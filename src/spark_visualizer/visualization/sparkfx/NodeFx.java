@@ -2,21 +2,25 @@ package spark_visualizer.visualization.sparkfx;
 
 import javafx.animation.Transition;
 import javafx.scene.Group;
+import javafx.scene.control.Label;
+import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 
 public class NodeFx extends Group {
 
     public static final double RDD_PADDING = 10;
-    public static final double WIDTH = RDD_PADDING + 2 * (RDD_PADDING + 2 * FieldFx.WIDTH);
+    private static double WIDTH = RDD_PADDING + 2 * (RDD_PADDING + 2 * FieldFx.get_width());
     
     private double height, width;
     private Rectangle container;
     private RDDPartitionFx fromRDD, toRDD;
+    private int id;
 
-    public NodeFx(double x, double y) {
+    public NodeFx(double x, double y, int id) {
 
         height = width = WIDTH;
+        this.id = id;
 
         container = new Rectangle(width, height);
 
@@ -25,6 +29,10 @@ public class NodeFx extends Group {
         container.setStrokeWidth(1);
         container.setArcHeight(25);
         container.setArcWidth(25);
+        Label label = new Label(id+"");
+        label.setScaleX(15);
+        label.setScaleY(15);
+        label.setOpacity(0.75);
         
         fromRDD = new RDDPartitionFx();
 		toRDD = new RDDPartitionFx();
@@ -33,9 +41,9 @@ public class NodeFx extends Group {
 		toRDD.setLayoutY(RDD_PADDING);
 		
 		fromRDD.setLayoutX(RDD_PADDING);
-		toRDD.setLayoutX(2 * (RDD_PADDING + FieldFx.WIDTH));
+		toRDD.setLayoutX(2 * (RDD_PADDING + FieldFx.get_width()));
 
-        getChildren().addAll(container, fromRDD, toRDD);
+        getChildren().addAll(new StackPane(container, label), fromRDD, toRDD);
 
         setLayoutX(x);
         setLayoutY(y);
@@ -43,7 +51,7 @@ public class NodeFx extends Group {
 
 
     public NodeFx copy() {
-        NodeFx node = new NodeFx(getLayoutX(), getLayoutY());
+        NodeFx node = new NodeFx(getLayoutX(), getLayoutY(), id);
         
         node.fromRDD.setBlocksize(fromRDD.getBlocksize());
         node.toRDD.setBlocksize(toRDD.getBlocksize());
@@ -115,11 +123,11 @@ public class NodeFx extends Group {
 		temp.setLayoutY(RDD_PADDING);
 		
 		temp.setLayoutX(toRDD.getLayoutX());
-		toRDD.setLayoutX(toRDD.getLayoutX() + RDD_PADDING + 2 * FieldFx.WIDTH);
+		toRDD.setLayoutX(toRDD.getLayoutX() + RDD_PADDING + 2 * FieldFx.get_width());
 		
 		getChildren().add(temp);
 		
-		container.setWidth(container.getWidth() + RDD_PADDING + 2 * FieldFx.WIDTH);
+		container.setWidth(container.getWidth() + RDD_PADDING + 2 * FieldFx.get_width());
 		width = container.getWidth();
 		
 		return temp;
@@ -142,7 +150,7 @@ public class NodeFx extends Group {
 
 
 	public void removeTempRDDs() {		
-		toRDD.setLayoutX(2 * (RDD_PADDING + FieldFx.WIDTH));
+		toRDD.setLayoutX(2 * (RDD_PADDING + FieldFx.get_width()));
 		
 		getChildren().remove(3, getChildren().size());
 		
@@ -151,13 +159,15 @@ public class NodeFx extends Group {
 		
 		updateNodeHeight();
 	}
-	
-	public void recomputeHeight() {
-		
-	}
-
 
 	public void setColor(Color c) {
 		container.setFill(c);
+	}
+
+
+	public void recompute_width() {
+		WIDTH = RDD_PADDING + 2 * (RDD_PADDING + 2 * FieldFx.get_width());
+		container.setWidth(WIDTH);
+		width = WIDTH;
 	}
 }

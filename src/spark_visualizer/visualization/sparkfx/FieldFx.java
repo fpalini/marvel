@@ -17,7 +17,8 @@ import javafx.scene.control.Tooltip;
 
 public class FieldFx extends StackPane implements Comparable<FieldFx> {
 
-	public static final double WIDTH = 120, HEIGHT = 20;
+	public static final double HEIGHT = 20;
+	private static double width = 60;
 
     private Label text;
     private Rectangle cell;
@@ -32,7 +33,7 @@ public class FieldFx extends StackPane implements Comparable<FieldFx> {
     public FieldFx(String value) {
         text = new Label(value);
 
-        cell = new Rectangle(WIDTH, HEIGHT, Color.CADETBLUE);
+        cell = new Rectangle(width, HEIGHT, Color.CADETBLUE);
         cell.setStroke(Color.BLACK);
         Tooltip.install(cell, new Tooltip(value));
         Tooltip.install(text, new Tooltip(value));
@@ -42,7 +43,7 @@ public class FieldFx extends StackPane implements Comparable<FieldFx> {
 
         getChildren().addAll(cell, text);
 
-        setPrefWidth(WIDTH);
+        setPrefWidth(width);
         setPrefHeight(HEIGHT);
     }
 
@@ -72,4 +73,10 @@ public class FieldFx extends StackPane implements Comparable<FieldFx> {
 	public int compareTo(FieldFx f) {
 		return toString().compareTo(f.toString());
 	}
+	
+	public static void set_width(double width) {
+		FieldFx.width = width;
+	}
+	
+	public static double get_width() { return width; }
 }

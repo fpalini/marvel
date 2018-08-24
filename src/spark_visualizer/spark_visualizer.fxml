@@ -20,64 +20,6 @@
 <?import org.controlsfx.control.BreadCrumbBar?>
 
 <BorderPane prefHeight="600.0" prefWidth="1050.0" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1" fx:controller="spark_visualizer.visualization.SparkVisualizerController">
-   <bottom>
-      <ToolBar>
-        <items>
-            <Button mnemonicParsing="false" onAction="#generate" prefHeight="26.0" prefWidth="80.0" text="Generate" translateX="5.0">
-               <opaqueInsets>
-                  <Insets />
-               </opaqueInsets></Button>
-            <Label minHeight="10.0" minWidth="50.0" text="Map">
-               <padding>
-                  <Insets left="20.0" />
-               </padding></Label>
-            <ComboBox fx:id="map_list" prefHeight="26.0" prefWidth="100.0" />
-            <Label minHeight="10.0" minWidth="60.0" text="Reduce">
-               <padding>
-                  <Insets left="10.0" />
-               </padding></Label>
-            <ComboBox fx:id="reduce_list" prefHeight="26.0" prefWidth="100.0" />
-            <Separator orientation="VERTICAL" prefHeight="0.0" prefWidth="2.0">
-               <padding>
-                  <Insets left="5.0" right="5.0" />
-               </padding>
-            </Separator>
-          <Button fx:id="run_button" mnemonicParsing="false" onAction="#run" prefHeight="26.0" prefWidth="65.0" text="Run" />
-            <Label fx:id="zoom_label" minHeight="10.0" minWidth="50.0" text="1.0x">
-               <padding>
-                  <Insets left="20.0" />
-               </padding></Label>
-            <VBox prefWidth="150.0">
-               <children>
-                  <Label text="Zoom" translateX="40.0" />
-                  <Slider fx:id="zoom_slider" majorTickUnit="50.0" max="220.0" min="20.0" minorTickCount="25" snapToTicks="true" value="100.0">
-                     <padding>
-                        <Insets right="10.0" />
-                     </padding>
-                  </Slider>
-               </children>
-            </VBox>
-            <Label fx:id="speed_label" minHeight="10.0" minWidth="50.0" text="1.0x" />
-            <VBox>
-               <children>
-                  <Label text="Speed" translateX="40.0" />
-                  <Slider fx:id="speed_slider" majorTickUnit="50.0" max="220.0" min="20.0" minorTickCount="25" prefWidth="150.0" snapToTicks="true" value="100.0">
-                     <padding>
-                        <Insets right="10.0" />
-                     </padding>
-                  </Slider>
-               </children>
-            </VBox>
-            <Button fx:id="done_button" mnemonicParsing="false" onAction="#done" prefHeight="26.0" prefWidth="65.0" text="Done" />
-            <Separator orientation="VERTICAL">
-               <padding>
-                  <Insets left="5.0" right="5.0" />
-               </padding>
-            </Separator>
-            <BreadCrumbBar fx:id="stages" />
-        </items>
-      </ToolBar>
-   </bottom>
    <center>
       <TabPane tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
         <tabs>
@@ -166,4 +108,62 @@
         </tabs>
       </TabPane>
    </center>
+   <top>
+      <ToolBar BorderPane.alignment="CENTER">
+        <items>
+            <Button mnemonicParsing="false" onAction="#generate" prefHeight="26.0" prefWidth="80.0" text="Generate" translateX="5.0">
+               <opaqueInsets>
+                  <Insets />
+               </opaqueInsets></Button>
+            <Label minHeight="10.0" minWidth="50.0" text="Map">
+               <padding>
+                  <Insets left="20.0" />
+               </padding></Label>
+            <ComboBox fx:id="map_list" prefHeight="26.0" prefWidth="100.0" />
+            <Label minHeight="10.0" minWidth="60.0" text="Reduce">
+               <padding>
+                  <Insets left="10.0" />
+               </padding></Label>
+            <ComboBox fx:id="reduce_list" prefHeight="26.0" prefWidth="100.0" />
+            <Separator orientation="VERTICAL" prefHeight="0.0" prefWidth="2.0">
+               <padding>
+                  <Insets left="5.0" right="5.0" />
+               </padding>
+            </Separator>
+          <Button fx:id="run_button" mnemonicParsing="false" onAction="#run" prefHeight="26.0" prefWidth="65.0" text="Run" />
+            <Label fx:id="zoom_label" minHeight="10.0" minWidth="25.0" text="0.6x">
+               <padding>
+                  <Insets left="20.0" />
+               </padding></Label>
+            <VBox prefWidth="150.0">
+               <children>
+                  <Label text="Zoom" translateX="40.0" />
+                  <Slider fx:id="zoom_slider" majorTickUnit="50.0" max="220.0" min="20.0" minorTickCount="25" snapToTicks="true" value="60.0">
+                     <padding>
+                        <Insets right="10.0" />
+                     </padding>
+                  </Slider>
+               </children>
+            </VBox>
+            <Label fx:id="speed_label" minHeight="10.0" minWidth="25.0" text="1.0x" />
+            <VBox>
+               <children>
+                  <Label text="Speed" translateX="40.0" />
+                  <Slider fx:id="speed_slider" majorTickUnit="50.0" max="220.0" min="20.0" minorTickCount="25" prefWidth="150.0" snapToTicks="true" value="100.0">
+                     <padding>
+                        <Insets right="10.0" />
+                     </padding>
+                  </Slider>
+               </children>
+            </VBox>
+            <Button fx:id="done_button" mnemonicParsing="false" onAction="#done" prefHeight="26.0" prefWidth="65.0" text="Done" />
+            <Separator orientation="VERTICAL">
+               <padding>
+                  <Insets left="5.0" right="5.0" />
+               </padding>
+            </Separator>
+            <BreadCrumbBar fx:id="stages" />
+        </items>
+      </ToolBar>
+   </top>
 </BorderPane>

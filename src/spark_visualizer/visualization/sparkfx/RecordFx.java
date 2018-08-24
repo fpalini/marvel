@@ -33,7 +33,7 @@ public class RecordFx extends HBox {
         fadeOut.setToValue(0.0);
 
         value = new FieldFx(v);
-        width = FieldFx.WIDTH;
+        width = FieldFx.get_width();
         
         // the key can be null, it implies an RDD with only values
         if (k != null) {

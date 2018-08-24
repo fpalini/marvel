@@ -19,6 +19,7 @@ import javafx.scene.control.Label;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.LineTo;
 import javafx.scene.shape.MoveTo;
+import javafx.scene.text.Text;
 import javafx.util.Duration;
 import javafx.util.Pair;
 import scala.Tuple2;
@@ -28,7 +29,6 @@ public class DistributedSystemFx extends Group {
 	public final static int PADDING = 50;
 
 	private ArrayList<NodeFx> nodes = new ArrayList<>();
-	private ArrayList<Label> labels = new ArrayList<>();
 
 	private int nNodes;
 	private int blocksize;
@@ -43,22 +43,17 @@ public class DistributedSystemFx extends Group {
 		this.rowsize = rowsize;
 		
 		NodeFx node;
-		Label label;
 
 		for (int i = 0; i < nNodes; i++) {
-			node = new NodeFx(0, 0);
+			node = new NodeFx(0, 0, i+1);
 			node.getFromRDD().setBlocksize(blocksize);
 			node.getToRDD().setBlocksize(blocksize);
 			nodes.add(node);
-
-			label = new Label("Node #" + (i+1));
-			labels.add(label);
 		}
 
 		relocate();
 
 		getChildren().addAll(nodes);
-		getChildren().addAll(labels);
 	}
 
 	public void parallelize(List<Tuple2<String,String>> dataset) {
@@ -72,6 +67,19 @@ public class DistributedSystemFx extends Group {
 	public void createRDD(List<Tuple2<String,String>> dataset) {
 	
 		Iterator<Tuple2<String, String>> data_iterator = dataset.iterator();
+		
+		for (Tuple2<String, String> t : dataset) {
+			if (new Text(t._1).getLayoutBounds().getWidth() + 10 > FieldFx.get_width() ||
+					new Text(t._2).getLayoutBounds().getWidth() + 10 > FieldFx.get_width()) {
+				
+				FieldFx.set_width(120);
+				
+				for (NodeFx n : nodes)
+					n.recompute_width();
+				
+				break;
+			}
+		}
 
 		int recordCounter;
 		
@@ -103,11 +111,7 @@ public class DistributedSystemFx extends Group {
 			if (maxWidth < node.width())
 				maxWidth = node.width();
 
-
-		int label_padding = 20;
-
 		NodeFx node;
-		Label label;
 		int r, c;
 		double x, y;
 
@@ -119,13 +123,9 @@ public class DistributedSystemFx extends Group {
 			y = r * (maxHeight + PADDING);
 
 			node = nodes.get(i);
-			label = labels.get(i);
 
 			node.setLayoutX(x);
 			node.setLayoutY(y);
-
-			label.setLayoutX(x);
-			label.setLayoutY(y - label_padding);
 		}
 	}
 
@@ -141,15 +141,7 @@ public class DistributedSystemFx extends Group {
 		for (NodeFx n : nodes)
 			es.add(n.copy());
 
-		for (Label l : labels) {
-			Label l1 = new Label(l.getText());
-			l1.setLayoutX(l.getLayoutX());
-			l1.setLayoutY(l.getLayoutY());
-			ls.add(l1);
-		}
-
 		system.nodes = es;
-		system.labels = ls;
 		system.setHeight(height);
 		system.setWidth(width);
 

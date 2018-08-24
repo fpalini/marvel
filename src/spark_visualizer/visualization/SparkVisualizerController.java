@@ -67,7 +67,7 @@ public class SparkVisualizerController implements Initializable {
 
 	private Orchestrator orchestrator;
 
-	private double zoom_value = 1;
+	private double zoom_value = 0.6;
 	private double speed_value = 1;
 
 	private TreeItem<DistributedSystemFx> selectedStage;
@@ -548,6 +548,8 @@ public class SparkVisualizerController implements Initializable {
 				Integer.parseInt(blocksize.getText()), rowsize);
 
 		canvas.getChildren().add(currentSystem);
+		
+		zoom(0.6);
 	}
 
 	public void setRowsize(int rowsize) {

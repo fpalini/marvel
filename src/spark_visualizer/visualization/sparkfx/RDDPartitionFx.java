@@ -8,7 +8,7 @@ import javafx.scene.Node;
 public class RDDPartitionFx extends Group {
 	
 	public static double BLOCK_PADDING = 10;
-	public static double DEFAULT_WIDTH = 2 * FieldFx.WIDTH;
+	public static double DEFAULT_WIDTH = 2 * FieldFx.get_width();
 	private double height;
 	private int blocksize;
 	
