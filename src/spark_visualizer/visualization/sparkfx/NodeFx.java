@@ -30,8 +30,8 @@ public class NodeFx extends Group {
         container.setArcHeight(25);
         container.setArcWidth(25);
         Label label = new Label(id+"");
-        label.setScaleX(15);
-        label.setScaleY(15);
+        label.setScaleX(WIDTH/15);
+        label.setScaleY(WIDTH/15);
         label.setOpacity(0.75);
         
         fromRDD = new RDDPartitionFx();
@@ -167,7 +167,6 @@ public class NodeFx extends Group {
 
 	public void recompute_width() {
 		WIDTH = RDD_PADDING + 2 * (RDD_PADDING + 2 * FieldFx.get_width());
-		container.setWidth(WIDTH);
 		width = WIDTH;
 	}
 }
