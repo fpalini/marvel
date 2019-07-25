@@ -1,13 +1,14 @@
-package spark_visualizer;
+package marvel;
 
 import org.apache.commons.cli.*;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.stage.Stage;
-import spark_visualizer.visualization.SparkVisualizerController;
+import marvel.visualization.MarvelController;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 
 
 public class Main extends Application {
@@ -27,11 +28,12 @@ public class Main extends Application {
 	@Override
 	public void start(Stage primaryStage) {
 		try {
+			System.setProperty("hadoop.home.dir", "C:\\Spark\\spark-2.3.0-bin-hadoop2.7");
 			
-			FXMLLoader loader = new FXMLLoader(getClass().getResource("spark_visualizer.fxml"));
+			FXMLLoader loader = new FXMLLoader(getClass().getResource("marvel.fxml"));
 			Parent root = loader.load();
 			
-			SparkVisualizerController controller = loader.getController();
+			MarvelController controller = loader.getController();
 			if (input != null) controller.setFile(input);
 			controller.setDatasize(datasize);
 			controller.setBlocksize(blocksize);
@@ -48,7 +50,8 @@ public class Main extends Application {
 			scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
 			
 			primaryStage.setScene(scene);
-			primaryStage.setTitle("Spark Visualizer");
+			primaryStage.setTitle("MARVEL");
+			primaryStage.getIcons().add(new Image(this.getClass().getResourceAsStream("/icon.png")));
 			primaryStage.show();
 			
 		} catch(Exception e) {
@@ -90,9 +93,9 @@ public class Main extends Application {
 
         if (cmd.hasOption('h')) formatter.printHelp("utility-name", options);
 		
-        datasize = cmd.getOptionValue("d", "90");
+        datasize = cmd.getOptionValue("d", "10");
         blocksize = cmd.getOptionValue("b", "3");
-        nodes = cmd.getOptionValue("n", "8");
+        nodes = cmd.getOptionValue("n", "2");
         keytype = cmd.getOptionValue("k", "String");
         valuetype = cmd.getOptionValue("v", "Integer");
         input = cmd.getOptionValue("i");

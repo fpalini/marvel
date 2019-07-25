@@ -1,4 +1,4 @@
-package spark_visualizer.visualization.sparkfx;
+package marvel.visualization.sparkfx;
 
 import javafx.animation.Transition;
 import javafx.scene.Group;
@@ -9,6 +9,8 @@ import javafx.scene.shape.Rectangle;
 
 public class NodeFx extends Group {
 
+	public final static Color GREEN = new Color(179/255.0, 255/255.0, 179/255.0, 1);
+	public final static Color RED = new Color(255/255.0, 128/255.0, 128/255.0, 1);
     public static final double RDD_PADDING = 10;
     private static double WIDTH = RDD_PADDING + 2 * (RDD_PADDING + 2 * FieldFx.get_width());
     
@@ -16,6 +18,7 @@ public class NodeFx extends Group {
     private Rectangle container;
     private RDDPartitionFx fromRDD, toRDD;
     private int id;
+    private Label label;
 
     public NodeFx(double x, double y, int id) {
 
@@ -24,12 +27,12 @@ public class NodeFx extends Group {
 
         container = new Rectangle(width, height);
 
-        container.setFill(new Color(179/255.0, 255/255.0, 179/255.0, 1));
+        container.setFill(GREEN);
         container.setStroke(Color.BLACK);
         container.setStrokeWidth(1);
         container.setArcHeight(25);
         container.setArcWidth(25);
-        Label label = new Label(id+"");
+        label = new Label(id+"");
         label.setScaleX(WIDTH/15);
         label.setScaleY(WIDTH/15);
         label.setOpacity(0.75);
@@ -52,6 +55,7 @@ public class NodeFx extends Group {
 
     public NodeFx copy() {
         NodeFx node = new NodeFx(getLayoutX(), getLayoutY(), id);
+        // node.setVisibleBg(container.isVisible());
         
         node.fromRDD.setBlocksize(fromRDD.getBlocksize());
         node.toRDD.setBlocksize(toRDD.getBlocksize());
@@ -67,23 +71,15 @@ public class NodeFx extends Group {
     }
     
     public Transition addRecordFromRDD(RecordFx record) {
-    	// record.setVisible(false);
     	fromRDD.addRecord(record);
-    	
     	updateNodeHeight();
-    	
-    	// record.getFadeIn().setOnFinished((event) -> record.setVisible(true));
     	
     	return record.getFadeIn();
     }
     
     public Transition addRecordToRDD(RecordFx record) {
-    	// record.setVisible(false);
     	toRDD.addRecord(record);
-    	
     	updateNodeHeight();
-    	
-    	// record.getFadeIn().setOnFinished((event) -> record.setVisible(true));
     	
     	return record.getFadeIn();
     }
@@ -109,13 +105,8 @@ public class NodeFx extends Group {
     	height = maxHeight + 2*RDD_PADDING < WIDTH ? WIDTH : maxHeight + 2*RDD_PADDING;
     	container.setHeight(height);
     }
-    
-    public double height() { return height; }
-    public RDDPartitionFx getFromRDD() { return fromRDD; }
-    public RDDPartitionFx getToRDD() { return toRDD; }
 
-    int n = 0;
-
+    // Used to manage the shuffle. It removes the temporary RDDs
 	public RDDPartitionFx addTempRDD() {
 		RDDPartitionFx temp = new RDDPartitionFx();
 		temp.setBlocksize(fromRDD.getBlocksize());
@@ -148,7 +139,7 @@ public class NodeFx extends Group {
 		fromRDD = temp;
 	}
 
-
+	// Used to manage the shuffle. It removes all the temporary RDDs
 	public void removeTempRDDs() {		
 		toRDD.setLayoutX(2 * (RDD_PADDING + FieldFx.get_width()));
 		
@@ -164,9 +155,18 @@ public class NodeFx extends Group {
 		container.setFill(c);
 	}
 
-
+	// Used to manage the two thresholds of records' size
 	public void recompute_width() {
 		WIDTH = RDD_PADDING + 2 * (RDD_PADDING + 2 * FieldFx.get_width());
 		width = WIDTH;
 	}
+	
+	public void setVisibleBg(boolean condition) {
+		container.setVisible(condition);
+		label.setVisible(condition);
+	}
+	
+	public double height() { return height; }
+    public RDDPartitionFx getFromRDD() { return fromRDD; }
+    public RDDPartitionFx getToRDD() { return toRDD; }
 }

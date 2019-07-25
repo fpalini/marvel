@@ -1,9 +1,13 @@
-package spark_visualizer.visualization.sparkfx;
+package marvel.visualization.sparkfx;
 
 import java.util.ArrayList;
 
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
 
 public class RDDPartitionFx extends Group {
 	
@@ -11,10 +15,19 @@ public class RDDPartitionFx extends Group {
 	public static double DEFAULT_WIDTH = 2 * FieldFx.get_width();
 	private double height;
 	private int blocksize;
+	private Text title;
 	
+	public RDDPartitionFx() {
+		title = new Text("");
+		title.setLayoutX(10);
+		title.setLayoutY(-15);
+		title.setFont(Font.font("Verdana", FontWeight.BOLD, 16));
+		
+		getChildren().add(title);
+	}
 	
 	public void addRecord(RecordFx record) {
-		BlockFx lastBlock = size() == 0 ? null : (BlockFx) getChildren().get(size()-1);
+		BlockFx lastBlock = size() == 0 ? null : (BlockFx) getChildren().get(size());
 		if (lastBlock != null && lastBlock.size() < blocksize) {
 			lastBlock.addRecord(record);
 			height += RecordFx.HEIGHT;
@@ -27,11 +40,9 @@ public class RDDPartitionFx extends Group {
 	}
 	
 	private void addBlock(BlockFx block) {
-		int nBlocks = getNumBlocks();
-
-        if (nBlocks > 0) {
+        if (size() > 0) {
             // if it isn't the first block of the RDD, move down the block
-        	BlockFx prevBlock = (BlockFx) getChildren().get(nBlocks - 1);
+        	BlockFx prevBlock = (BlockFx) getChildren().get(size());
             block.setLayoutY(prevBlock.getLayoutY() + prevBlock.height() + BLOCK_PADDING);
             height += BLOCK_PADDING + block.height();
         }
@@ -44,7 +55,8 @@ public class RDDPartitionFx extends Group {
         ArrayList<BlockFx> blocks = new ArrayList<>();
 
         for (Node b : getChildren())
-            blocks.add((BlockFx) b);
+        	if (b instanceof BlockFx)
+        		blocks.add((BlockFx) b);
 
         return blocks;
     }
@@ -60,14 +72,13 @@ public class RDDPartitionFx extends Group {
     
     public void clear() {
     	height = 0;
-    	getChildren().clear();
+    	getChildren().subList(1, size()+1).clear();
     }
     
-    public int getNumBlocks() { return getChildren().size(); }
     public double height() { return height; }
 	public int getNumRecords() { return getRecords().size(); }
-	public boolean isEmpty() { return getChildren().isEmpty(); }
-	public int size() {return getChildren().size(); }
+	public boolean isEmpty() { return size() == 0; }
+	public int size() {return getChildren().size() - 1; }
 	
 	@Override
 	public String toString() {
@@ -75,10 +86,10 @@ public class RDDPartitionFx extends Group {
 		
 		if (size() == 0) return "{}";
     	
-    	for (int i = 0; i < size()-1; i++)
+    	for (int i = 1; i < size(); i++)
     		s += getChildren().get(i).toString() + ", ";
     		
-    	s += getChildren().get(size()-1) + "}";
+    	s += getChildren().get(size()) + "}";
     	
     	return s;
 	}
@@ -94,10 +105,12 @@ public class RDDPartitionFx extends Group {
 	public RDDPartitionFx copy() {
 		RDDPartitionFx rdd = new RDDPartitionFx();
 		
-		for (BlockFx block : getBlocks())
-			rdd.addBlock(block);
-		
 		rdd.setBlocksize(blocksize);
+		
+		for (RecordFx record : getRecords())
+			rdd.addRecord(record.copy());
+		
+		rdd.setTitle(title.getText());
 		
 		return rdd;
 	}
@@ -107,11 +120,26 @@ public class RDDPartitionFx extends Group {
 		
 		BlockFx block;
 		
-		for (Node n : getChildren()) {
-			block = (BlockFx) n;
-			
-			if (block.contains(record))
-				block.removeRecord(record);
-		}
+		for (Node n : getChildren()) 
+			if (n instanceof BlockFx) {
+				block = (BlockFx) n;
+				
+				if (block.contains(record))
+					block.removeRecord(record);
+			}
+	}
+
+	public int indexOf(RecordFx r) {
+		for (int i = 0; i < getRecords().size(); i++)
+			if (getRecords().get(i) == r)
+				return i;
+		
+		return -1;
+	}
+
+	public void setTitle(String struct_title) {
+		title.setText(struct_title);
+		if (title.getText().contains("RBK"))
+			title.setFill(Color.RED);
 	}
 }

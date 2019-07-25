@@ -1,4 +1,4 @@
-package spark_visualizer.visualization;
+package marvel.visualization;
 
 import java.io.File;
 import java.io.IOException;
@@ -7,30 +7,37 @@ import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
+import javafx.animation.ParallelTransition;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
 import javafx.scene.Group;
+import javafx.scene.canvas.Canvas;
 import javafx.scene.control.*;
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
+import marvel.orchestrator.Orchestrator;
+import marvel.visualization.sparkfx.DistributedSystemFx;
+import marvel.visualization.sparkfx.LocalSystemFx;
+import marvel.visualization.sparkfx.NodeFx;
+import marvel.visualization.sparkfx.RDDPartitionFx;
+import marvel.visualization.sparkfx.RecordFx;
+import marvel.visualization.sparkfx.SystemFx;
 import javafx.stage.Stage;
 import scala.Tuple2;
-import spark_visualizer.orchestrator.Orchestrator;
-import spark_visualizer.visualization.sparkfx.DistributedSystemFx;
-import spark_visualizer.visualization.sparkfx.NodeFx;
-import spark_visualizer.visualization.sparkfx.RecordFx;
 
 import org.controlsfx.control.BreadCrumbBar;
 
 import impl.org.controlsfx.skin.BreadCrumbBarSkin.BreadCrumbButton;
 
-public class SparkVisualizerController implements Initializable {
+public class MarvelController implements Initializable {
 
 	@FXML
-	private Group canvas;
+	private AnchorPane canvas;
 
 	@FXML
 	private ChoiceBox<String> keytype, valuetype;
@@ -51,7 +58,7 @@ public class SparkVisualizerController implements Initializable {
 	private ScrollPane scrollpane;
 
 	@FXML
-	private BreadCrumbBar<DistributedSystemFx> stages;
+	private BreadCrumbBar<SystemFx> stages;
 
 	@FXML
 	private TextField split, keycol, valuecol;
@@ -63,19 +70,23 @@ public class SparkVisualizerController implements Initializable {
 
 	private File input_file;
 
-	private DistributedSystemFx currentSystem;
+	private SystemFx currentSystem;
 
 	private Orchestrator orchestrator;
+	
+	private boolean local_enabled;
 
-	private double zoom_value = 0.6;
+	private double zoom_value = 1;
 	private double speed_value = 1;
 
-	private TreeItem<DistributedSystemFx> selectedStage;
+	private TreeItem<SystemFx> selectedStage;
 
-	private String map_operations[] = new String[] { "Swap", "FilterOnKey", "FilterOnValue" };
+	private String map_operations[] = new String[] { "Swap", "FilterOnKey", "FilterOnValue", "Split", "FlatMapToPair"};
 	private String reduce_operations[] = new String[] { "Count", "MinOnKey", "MinOnValue", 
-			"MaxOnKey", "MaxOnValue", "SumOnKey", "SumOnValue", "ReduceByKey + Count", "ReduceByKey + Min", "ReduceByKey + Max", "ReduceByKey + Sum" };
-	private String operation = reduce_operations[0];
+			"MaxOnKey", "MaxOnValue", "SumOnKey", "SumOnValue", "GroupByKey", "ReduceByKey + Count", "ReduceByKey + Min", "ReduceByKey + Max", "ReduceByKey + Sum" };
+
+	@FXML
+	private TabPane tabPane;
 
 	/**
 	 * Resets the system, generates a new random dataset
@@ -84,24 +95,47 @@ public class SparkVisualizerController implements Initializable {
 	@FXML
 	private void generate() {
 		reset();
+		
+		tabPane.getSelectionModel().select(1);
 
 		List<Tuple2<String,String>> dataset = createDataset();
 
-		currentSystem.parallelize(dataset);
+		currentSystem.createInput(dataset);
 
 		currentSystem.setSystemName("Generate");
+		if (currentSystem instanceof LocalSystemFx) ((LocalSystemFx) currentSystem).setTitle("Generate");
 		stages.setSelectedCrumb(new TreeItem<>(currentSystem));
 		selectedStage = stages.getSelectedCrumb();
 		
-		for (NodeFx node : currentSystem.getNodes())
-			if (node.getFromRDD().size() == 0)
-        		node.setColor(new Color(255/255.0, 128/255.0, 128/255.0, 1));
-        	else
-        		node.setColor(new Color(179/255.0, 255/255.0, 179/255.0, 1));
+		if (!local_enabled)
+			for (NodeFx node : ((DistributedSystemFx) currentSystem).getNodes())
+				if (node.getFromRDD().size() == 0)
+	        		node.setColor(NodeFx.RED);
+	        	else
+	        		node.setColor(NodeFx.GREEN);
 
 		setCurrentSystem(currentSystem.copy());
 		
+		initTransition();
+		
 		run_button.setDisable(false);
+	}
+
+	private void initTransition() {
+		ParallelTransition initTransition = new ParallelTransition();
+		
+		if (!local_enabled) {
+			for (NodeFx node : ((DistributedSystemFx) currentSystem).getNodes())
+				for (RecordFx record : node.getFromRDD().getRecords())
+					initTransition.getChildren().add(record.getFadeIn());	
+			}
+		else {
+			for(RDDPartitionFx rdd : ((LocalSystemFx) currentSystem).getStructs())
+				for (RecordFx record : rdd.getRecords())
+					initTransition.getChildren().add(record.getFadeIn());	
+		}
+			
+		initTransition.play();
 	}
 
 	/**
@@ -133,17 +167,20 @@ public class SparkVisualizerController implements Initializable {
 		String reduce_function = reduce_list.getValue();
 
 		// execution of both map and reduce function not permitted.
-		if (!map_function.equals("-") && !reduce_function.equals("-"))
+		if (map_function.equals("-") == reduce_function.equals("-"))
 			return;
+		
+		run_button.setDisable(true);
 
 		// execution with more than one RDD not permitted.
-		for (NodeFx node : currentSystem.getNodes())
-			if (node.getToRDD().size() > 0)
-				node.getToRDD().clear();
+		if (!local_enabled)
+			for (NodeFx node : ((DistributedSystemFx) currentSystem).getNodes())
+				if (node.getToRDD().size() > 0)
+					node.getToRDD().clear();
 
 		// Execution after an aggregation (not by key) not permitted
 		for (String op : reduce_operations)
-			if (!op.startsWith("ReduceByKey") && selectedStage.getValue().toString().equals(op)) {
+			if (!op.contains("ByKey") && selectedStage.getValue().toString().equals(op)) {
 				DistributedSystemFx.warning("End of Execution!");
 				return;
 			}
@@ -160,12 +197,13 @@ public class SparkVisualizerController implements Initializable {
 		case "FilterOnKey":
 			if (openFilterOptions()) {
 				if (condition.equals(">") || condition.equals("<"))
-					for (NodeFx node : currentSystem.getNodes()) {
-						try {
-							for (RecordFx record : node.getFromRDD().getRecords()) 
-								Double.parseDouble(record.getKey().toString());
-						} catch (NumberFormatException n) { DistributedSystemFx.warning("Values must be numbers!"); return; }
-					}
+					if(!local_enabled)
+						for (NodeFx node : ((DistributedSystemFx) currentSystem).getNodes()) {
+							try {
+								for (RecordFx record : node.getFromRDD().getRecords()) 
+									Double.parseDouble(record.getKey().toString());
+							} catch (NumberFormatException n) { DistributedSystemFx.warning("Values must be numbers!"); return; }
+						}
 				
 				currentSystem.filter(condition, value, true);
 				currentSystem.setRate(speed_value);
@@ -174,20 +212,35 @@ public class SparkVisualizerController implements Initializable {
 			}
 			break;
 		case "FilterOnValue":
-		if (openFilterOptions()) {
-			if (condition.equals(">") || condition.equals("<"))
-				for (NodeFx node : currentSystem.getNodes()) {
-					try {
-						for (RecordFx record : node.getFromRDD().getRecords()) 
-							Double.parseDouble(record.getValue().toString());
-					} catch (NumberFormatException n) { DistributedSystemFx.warning("Values must be numbers!"); return; }
-				}
-			currentSystem.filter(condition, value, false);
+			if (openFilterOptions()) {
+				if (condition.equals(">") || condition.equals("<"))
+					if(!local_enabled)
+						for (NodeFx node : ((DistributedSystemFx) currentSystem).getNodes()) {
+							try {
+								for (RecordFx record : node.getFromRDD().getRecords()) 
+									Double.parseDouble(record.getValue().toString());
+							} catch (NumberFormatException n) { DistributedSystemFx.warning("Values must be numbers!"); return; }
+						}
+				currentSystem.filter(condition, value, false);
+				currentSystem.setRate(speed_value);
+				currentSystem.getCurrentTransition().play();
+				currentSystem.setSystemName("FilterOnValue");
+			}
+			break;
+		case "Split":
+			currentSystem.split();
 			currentSystem.setRate(speed_value);
 			currentSystem.getCurrentTransition().play();
-			currentSystem.setSystemName("FilterOnValue");
-		}
-		break;
+			currentSystem.setSystemName("Split");
+			
+			break;
+		case "FlatMapToPair":
+			currentSystem.flatMapToPair();
+			currentSystem.setRate(speed_value);
+			currentSystem.getCurrentTransition().play();
+			currentSystem.setSystemName("FlatMapToPair");
+			
+			break;
 	}
 
 		switch (reduce_function) {
@@ -199,24 +252,26 @@ public class SparkVisualizerController implements Initializable {
 			break;
 		
 		case "MinOnKey":
-			for (NodeFx node : currentSystem.getNodes()) {
-				try {
-					for (RecordFx record : node.getFromRDD().getRecords()) 
-						Double.parseDouble(record.getKey().toString());
-				} catch (NumberFormatException n) { DistributedSystemFx.warning("Values must be numbers!"); return; }
-			}
+			if(!local_enabled)
+				for (NodeFx node : ((DistributedSystemFx) currentSystem).getNodes()) {
+					try {
+						for (RecordFx record : node.getFromRDD().getRecords()) 
+							Double.parseDouble(record.getKey().toString());
+					} catch (NumberFormatException n) { DistributedSystemFx.warning("Values must be numbers!"); return; }
+				}
 			currentSystem.min(false, true);
 			currentSystem.setRate(speed_value);
 			currentSystem.getCurrentTransition().play();
 			currentSystem.setSystemName("MinOnKey");
 			break;
 		case "MinOnValue":
-			for (NodeFx node : currentSystem.getNodes()) {
-				try {
-					for (RecordFx record : node.getFromRDD().getRecords()) 
-						Double.parseDouble(record.getValue().toString());
-				} catch (NumberFormatException n) { DistributedSystemFx.warning("Values must be numbers!"); return; }
-			}
+			if(!local_enabled)
+				for (NodeFx node : ((DistributedSystemFx) currentSystem).getNodes()) {
+					try {
+						for (RecordFx record : node.getFromRDD().getRecords()) 
+							Double.parseDouble(record.getValue().toString());
+					} catch (NumberFormatException n) { DistributedSystemFx.warning("Values must be numbers!"); return; }
+				}
 			currentSystem.min(false, false);
 			currentSystem.setRate(speed_value);
 			currentSystem.getCurrentTransition().play();
@@ -224,24 +279,26 @@ public class SparkVisualizerController implements Initializable {
 			break;
 		
 		case "MaxOnKey":
-			for (NodeFx node : currentSystem.getNodes()) {
-				try {
-					for (RecordFx record : node.getFromRDD().getRecords()) 
-						Double.parseDouble(record.getKey().toString());
-				} catch (NumberFormatException n) { DistributedSystemFx.warning("Values must be numbers!"); return; }
-			}
+			if(!local_enabled)
+				for (NodeFx node : ((DistributedSystemFx) currentSystem).getNodes()) {
+					try {
+						for (RecordFx record : node.getFromRDD().getRecords()) 
+							Double.parseDouble(record.getKey().toString());
+					} catch (NumberFormatException n) { DistributedSystemFx.warning("Values must be numbers!"); return; }
+				}
 			currentSystem.max(false, true);
 			currentSystem.setRate(speed_value);
 			currentSystem.getCurrentTransition().play();
 			currentSystem.setSystemName("MaxOnKey");
 			break;
 		case "MaxOnValue":
-			for (NodeFx node : currentSystem.getNodes()) {
-				try {
-					for (RecordFx record : node.getFromRDD().getRecords()) 
-						Double.parseDouble(record.getValue().toString());
-				} catch (NumberFormatException n) { DistributedSystemFx.warning("Values must be numbers!"); return; }
-			}
+			if(!local_enabled)
+				for (NodeFx node : ((DistributedSystemFx) currentSystem).getNodes()) {
+					try {
+						for (RecordFx record : node.getFromRDD().getRecords()) 
+							Double.parseDouble(record.getValue().toString());
+					} catch (NumberFormatException n) { DistributedSystemFx.warning("Values must be numbers!"); return; }
+				}
 			currentSystem.max(false, false);
 			currentSystem.setRate(speed_value);
 			currentSystem.getCurrentTransition().play();
@@ -249,32 +306,41 @@ public class SparkVisualizerController implements Initializable {
 			break;
 		
 		case "SumOnKey":
-			for (NodeFx node : currentSystem.getNodes()) {
-				try {
-					for (RecordFx record : node.getFromRDD().getRecords()) 
-						Double.parseDouble(record.getKey().toString());
-				} catch (NumberFormatException n) { DistributedSystemFx.warning("Values must be numbers!"); return; }
-			}
+			if(!local_enabled)
+				for (NodeFx node : ((DistributedSystemFx) currentSystem).getNodes()) {
+					try {
+						for (RecordFx record : node.getFromRDD().getRecords()) 
+							Double.parseDouble(record.getKey().toString());
+					} catch (NumberFormatException n) { DistributedSystemFx.warning("Values must be numbers!"); return; }
+				}
 			currentSystem.sum(false, true, false);
 			currentSystem.setRate(speed_value);
 			currentSystem.getCurrentTransition().play();
 			currentSystem.setSystemName("SumOnKey");
 			break;
 		case "SumOnValue":
-			for (NodeFx node : currentSystem.getNodes()) {
-				try {
-					for (RecordFx record : node.getFromRDD().getRecords()) 
-						Double.parseDouble(record.getValue().toString());
-				} catch (NumberFormatException n) { DistributedSystemFx.warning("Values must be numbers!"); return; }
-			}
+			if(!local_enabled)
+				for (NodeFx node : ((DistributedSystemFx) currentSystem).getNodes()) {
+					try {
+						for (RecordFx record : node.getFromRDD().getRecords()) 
+							Double.parseDouble(record.getValue().toString());
+					} catch (NumberFormatException n) { DistributedSystemFx.warning("Values must be numbers!"); return; }
+				}
 			currentSystem.sum(false, false, false);
 			currentSystem.setRate(speed_value);
 			currentSystem.getCurrentTransition().play();
 			currentSystem.setSystemName("SumOnValue");
 			break;
 			
+		case "GroupByKey":
+			currentSystem.reduceByKey(reduce_function, done_button);
+			currentSystem.setRate(speed_value);
+			currentSystem.getCurrentTransition().play();
+			currentSystem.setSystemName("GroupByKey");
+			break;
+			
 		case "ReduceByKey + Count":
-			currentSystem.reduceByKey(operation, done_button);
+			currentSystem.reduceByKey(reduce_function, done_button);
 			currentSystem.setRate(speed_value);
 			currentSystem.getCurrentTransition().play();
 			currentSystem.setSystemName("RBK + Count");
@@ -282,21 +348,21 @@ public class SparkVisualizerController implements Initializable {
 		
 		
 		case "ReduceByKey + Min":
-			currentSystem.reduceByKey(operation, done_button);
+			currentSystem.reduceByKey(reduce_function, done_button);
 			currentSystem.setRate(speed_value);
 			currentSystem.getCurrentTransition().play();
 			currentSystem.setSystemName("RBK + Min");
 			break;
 		
 		case "ReduceByKey + Max":
-			currentSystem.reduceByKey(operation, done_button);
+			currentSystem.reduceByKey(reduce_function, done_button);
 			currentSystem.setRate(speed_value);
 			currentSystem.getCurrentTransition().play();
 			currentSystem.setSystemName("RBK + Max");
 			break;
 			
 		case "ReduceByKey + Sum":
-			currentSystem.reduceByKey(operation, done_button);
+			currentSystem.reduceByKey(reduce_function, done_button);
 			currentSystem.setRate(speed_value);
 			currentSystem.getCurrentTransition().play();
 			currentSystem.setSystemName("RBK + Sum");
@@ -312,40 +378,54 @@ public class SparkVisualizerController implements Initializable {
 	 */
 	@FXML
 	void done() {
-		if (currentSystem.toString().startsWith("RBK")) {
-			for (NodeFx node : currentSystem.getNodes())
-				node.removeTempRDDs();
-			
-			currentSystem.relocate();
-		}
+		if (!local_enabled)
+			if (currentSystem.toString().startsWith("RBK") || currentSystem.toString().startsWith("GroupByKey")) {
+				for (NodeFx node : ((DistributedSystemFx) currentSystem).getNodes())
+					node.removeTempRDDs();
+				
+				((DistributedSystemFx) currentSystem).relocate();
+			}
 		
 		int numVoid = 0;
-		for (NodeFx node : currentSystem.getNodes())
-			if (node.getToRDD().size() == 0) numVoid++;
+		
+		if (currentSystem instanceof LocalSystemFx) ((LocalSystemFx) currentSystem).setTitle(currentSystem.toString());
+		
+		if(!local_enabled)
+			for (NodeFx node : ((DistributedSystemFx) currentSystem).getNodes())
+				if (node.getToRDD().size() == 0) numVoid++;
 
 		// if all the nodes 
 		if (numVoid == Integer.parseInt(nodes.getText())) return;
 
-		currentSystem.overwriteFromRDD();
+		if (!local_enabled) ((DistributedSystemFx) currentSystem).overwriteFromRDD();
 
-		TreeItem<DistributedSystemFx> crumb_currentSystem = new TreeItem<>(currentSystem);
+		TreeItem<SystemFx> crumb_currentSystem = new TreeItem<>(currentSystem);
 		selectedStage.getChildren().clear();
 		selectedStage.getChildren().add(crumb_currentSystem);
 		stages.setSelectedCrumb(crumb_currentSystem);
 		selectedStage = crumb_currentSystem;
 		
-		for (NodeFx node : currentSystem.getNodes())
-			if (node.getFromRDD().size() == 0)
-        		node.setColor(new Color(255/255.0, 128/255.0, 128/255.0, 1));
-        	else
-        		node.setColor(new Color(179/255.0, 255/255.0, 179/255.0, 1));
+		if(!local_enabled)
+			for (NodeFx node : ((DistributedSystemFx) currentSystem).getNodes())
+				if (node.getFromRDD().size() == 0)
+	        		node.setColor(NodeFx.RED);
+	        	else
+	        		node.setColor(NodeFx.GREEN);
 		
 		setCurrentSystem(currentSystem.copy());
+		
+		initTransition();
 
 		map_list.setValue("-");
 		reduce_list.setValue("-");
 		
 		done_button.setDisable(true);
+		run_button.setDisable(false);
+		
+		if (local_enabled) {
+			canvas.setPrefWidth(canvas.getWidth() + 260);
+			scrollpane.setHvalue(1);
+		}
 	}
 
 	private String condition = ">", value = "0";
@@ -403,13 +483,69 @@ public class SparkVisualizerController implements Initializable {
 
 		return result.isPresent();
 	}
+	
+	/**
+	 * Opens a window with the filter option. It should be called 
+	 * only when the filter option is selected.
+	 */
+	private boolean openLocalSystemDialog() throws IOException {
+		// Create the custom dialog.
+		Dialog<String[]> dialog = new Dialog<>();
+		dialog.setTitle("System Mode");
+
+		dialog.getDialogPane().getButtonTypes().addAll(ButtonType.APPLY, ButtonType.CANCEL);
+
+		GridPane grid = new GridPane();
+		grid.setHgap(10);
+		grid.setVgap(10);
+		grid.setPadding(new Insets(20, 150, 10, 10));
+		
+		CheckBox check_local = new CheckBox("Local System");
+		check_local.selectedProperty().addListener( (arg, oldVal, newVal) -> local_enabled = newVal);
+		grid.add(check_local, 0, 1);
+
+		dialog.getDialogPane().setContent(grid);
+
+		// Convert the result to a condition-value pair when the OK button is clicked.
+		dialog.setResultConverter(
+				dialogButton -> {
+					if (dialogButton == ButtonType.APPLY)
+						if (local_enabled)
+							return new String[] { "true" };
+						else
+							return new String[] { "false" };
+					
+					Platform.exit();
+					System.exit(0);
+					return null;
+				});
+
+		Optional<String[]> result = dialog.showAndWait();
+
+		result.ifPresent(
+				conditionValue -> { 
+					local_enabled = Boolean.parseBoolean(conditionValue[0]);
+					
+					nodes.setDisable(local_enabled);
+					blocksize.setDisable(local_enabled);
+				}
+				);
+
+		return result.isPresent();
+	}
 
 	/**
 	 * Resets all the structures.
 	 */
 	public void reset() {		
-		setCurrentSystem(new DistributedSystemFx(Integer.parseInt(nodes.getText()), 
+		if(!local_enabled) setCurrentSystem(new DistributedSystemFx(Integer.parseInt(nodes.getText()), 
 				Integer.parseInt(blocksize.getText()), rowsize));
+		else
+			setCurrentSystem(new LocalSystemFx());
+		
+		/*if (!local_enabled)
+			for (NodeFx node : ((DistributedSystemFx) currentSystem).getNodes())
+				node.setVisibleBg(!local_enabled);*/
 	}
 
 	@Override
@@ -458,17 +594,27 @@ public class SparkVisualizerController implements Initializable {
 					selectedStage = event.getSelectedCrumb();
 					setCurrentSystem(selectedStage.getValue().copy());
 					done_button.setDisable(true);
+					run_button.setDisable(false);
 				});
 
 		stages.setCrumbFactory(crumb -> {
 				
 				BreadCrumbButton crumbButton = new BreadCrumbButton(crumb.getValue() != null ? crumb.getValue().toString() : "");
 				
-				if (crumb.getValue().toString().startsWith("RBK"))
+				if (crumb.getValue().toString().startsWith("RBK") || crumb.getValue().toString().startsWith("GroupByKey"))
 					crumbButton.setTextFill(Color.RED);
 				
 				return crumbButton;
 		});
+		
+		canvas.setPrefWidth(canvas.getWidth() + 800);
+		
+		try {
+			openLocalSystemDialog();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	private void speed(double value) {
@@ -492,15 +638,17 @@ public class SparkVisualizerController implements Initializable {
 	@FXML
 	private void chooseFile() {
 		FileChooser fileChooser = new FileChooser();
-		fileChooser.getExtensionFilters().add(new ExtensionFilter("CSV",  "*.csv"));
+		fileChooser.getExtensionFilters().add(new ExtensionFilter("CSV", "*.csv"));
 		fileChooser.setTitle("Import Dataset File");
 		input_file = fileChooser.showOpenDialog(new Stage());
 	}
 
-	private void setCurrentSystem(DistributedSystemFx ds) {
-		currentSystem = ds;
+	private void setCurrentSystem(SystemFx s) {
+		currentSystem = s;
 		canvas.getChildren().set(0, currentSystem);
 		zoom(zoom_value);
+		
+		initTransition();
 	}
 
 	public void setDatasize(String d) {
@@ -541,15 +689,24 @@ public class SparkVisualizerController implements Initializable {
 
 	public void initSystem() {
 		// initialize working system
+		
+		if (local_enabled) {
+			blocksize.setText("");
+			nodes.setText("1");
+		}
 
 		orchestrator = new Orchestrator(Integer.parseInt(nodes.getText()));
 
-		currentSystem = new DistributedSystemFx(Integer.parseInt(nodes.getText()), 
+		currentSystem = local_enabled ? new LocalSystemFx() : new DistributedSystemFx(Integer.parseInt(nodes.getText()), 
 				Integer.parseInt(blocksize.getText()), rowsize);
+		
+		/*if (!local_enabled)
+			for (NodeFx node : ((DistributedSystemFx) currentSystem).getNodes())
+				node.setVisibleBg(!local_enabled);*/
 
 		canvas.getChildren().add(currentSystem);
 		
-		zoom(0.6);
+		// zoom(0.6);
 	}
 
 	public void setRowsize(int rowsize) {

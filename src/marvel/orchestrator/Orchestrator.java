@@ -1,4 +1,4 @@
-package spark_visualizer.orchestrator;
+package marvel.orchestrator;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -11,8 +11,8 @@ import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.RandomStringUtils;
 
+import marvel.mapreduce.MapReduceAlgo;
 import scala.Tuple2;
-import spark_visualizer.mapreduce.MapReduceAlgo;
 
 public class Orchestrator {
 	private MapReduceAlgo mapReduceAlgo;

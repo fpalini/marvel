@@ -1,4 +1,4 @@
-package spark_visualizer.visualization.sparkfx;
+package marvel.visualization.sparkfx;
 
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
@@ -18,7 +18,8 @@ import javafx.scene.control.Tooltip;
 public class FieldFx extends StackPane implements Comparable<FieldFx> {
 
 	public static final double HEIGHT = 20;
-	private static double width = 60;
+	public static final double DEFAULT_WIDTH = 80;
+	private static double width = DEFAULT_WIDTH;
 
     private Label text;
     private Rectangle cell;
@@ -33,7 +34,7 @@ public class FieldFx extends StackPane implements Comparable<FieldFx> {
     public FieldFx(String value) {
         text = new Label(value);
 
-        cell = new Rectangle(width, HEIGHT, Color.CADETBLUE);
+        cell = new Rectangle(width, HEIGHT, Color.CYAN);
         cell.setStroke(Color.BLACK);
         Tooltip.install(cell, new Tooltip(value));
         Tooltip.install(text, new Tooltip(value));
@@ -47,7 +48,7 @@ public class FieldFx extends StackPane implements Comparable<FieldFx> {
         setPrefHeight(HEIGHT);
     }
 
-    public void setText(String s) { text.setText(s); }
+    public void setText(String s) { text.setText(s); Tooltip.install(text, new Tooltip(s)); }
     
     public Label getLabel() { return text; }
     

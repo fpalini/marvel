@@ -1,10 +1,11 @@
-package spark_visualizer.visualization.sparkfx;
+package marvel.visualization.sparkfx;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.TreeSet;
 
 import org.apache.spark.HashPartitioner;
 
@@ -16,7 +17,6 @@ import javafx.scene.Parent;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.paint.Color;
 import javafx.scene.shape.LineTo;
 import javafx.scene.shape.MoveTo;
 import javafx.scene.text.Text;
@@ -24,7 +24,7 @@ import javafx.util.Duration;
 import javafx.util.Pair;
 import scala.Tuple2;
 
-public class DistributedSystemFx extends Group {
+public class DistributedSystemFx extends SystemFx {
 
 	public final static int PADDING = 50;
 
@@ -33,8 +33,6 @@ public class DistributedSystemFx extends Group {
 	private int nNodes;
 	private int blocksize;
 	private int rowsize;
-	
-	private String system_name;
 
 	private double height, width;
 	public DistributedSystemFx(int nNodes, int blocksize, int rowsize) {
@@ -56,7 +54,7 @@ public class DistributedSystemFx extends Group {
 		getChildren().addAll(nodes);
 	}
 
-	public void parallelize(List<Tuple2<String,String>> dataset) {
+	public void createInput(List<Tuple2<String,String>> dataset) {
 		createRDD(dataset);
 		relocate();
 	}
@@ -72,7 +70,7 @@ public class DistributedSystemFx extends Group {
 			if (new Text(t._1).getLayoutBounds().getWidth() + 10 > FieldFx.get_width() ||
 					new Text(t._2).getLayoutBounds().getWidth() + 10 > FieldFx.get_width()) {
 				
-				FieldFx.set_width(120);
+				FieldFx.set_width(FieldFx.DEFAULT_WIDTH + 40);
 				
 				for (NodeFx n : nodes)
 					n.recompute_width();
@@ -124,8 +122,8 @@ public class DistributedSystemFx extends Group {
 
 			node = nodes.get(i);
 
-			node.setLayoutX(x);
-			node.setLayoutY(y);
+			node.setLayoutX(x+20);
+			node.setLayoutY(y+20);
 		}
 	}
 
@@ -200,7 +198,9 @@ public class DistributedSystemFx extends Group {
 						min_values.set(index, new Pair<>(record.getKey().toString(), record.getValue().toString()));
 					}
 					
-					if (Double.parseDouble(overallMin) > Double.parseDouble(element1)) {
+					System.out.println(overallMin);
+					
+					if (overallMin == null || Double.parseDouble(overallMin) > Double.parseDouble(element1)) {
 						overallMin = element1;
 						overallMinRecord = record;
 					}
@@ -221,9 +221,9 @@ public class DistributedSystemFx extends Group {
 		
 		if (!byKey) systemTransition.setOnFinished( event -> information("The minimum value is: " + final_overallMin + "\nrecord: "+final_overallMinRecord));
 		
-		currentTransition = systemTransition;
+		setCurrentTransition(systemTransition);
 		
-		return currentTransition;
+		return systemTransition;
 	}
 	
 	public Transition max(boolean byKey, boolean onKey) {	
@@ -270,7 +270,7 @@ public class DistributedSystemFx extends Group {
 					if (Double.parseDouble(element2) < Double.parseDouble(element1))
 						max_values.set(index, new Pair<>(record.getKey().toString(), record.getValue().toString()));
 					
-					if (Double.parseDouble(overallMax) < Double.parseDouble(element1)) {
+					if (overallMax == null || Double.parseDouble(overallMax) < Double.parseDouble(element1)) {
 						overallMax = element1;
 						overallMaxRecord = record;
 					}
@@ -291,9 +291,9 @@ public class DistributedSystemFx extends Group {
 		
 		if (!byKey) systemTransition.setOnFinished( event -> information("The maximum value is: " + final_overallMax + "\nrecord: " + final_overallMaxRecord));
 		
-		currentTransition = systemTransition;
+		setCurrentTransition(systemTransition);
 		
-		return currentTransition;
+		return systemTransition;
 	}
 	
 	public Transition sum(boolean byKey, boolean onKey, boolean isInteger) {
@@ -358,9 +358,9 @@ public class DistributedSystemFx extends Group {
 		
 		if (!byKey) systemTransition.setOnFinished( event -> information("The overall sum is: " + final_overallSum));
 		
-		currentTransition = systemTransition;
+		setCurrentTransition(systemTransition);
 		
-		return currentTransition;
+		return systemTransition;
 	}
 
 	public Transition count(boolean byKey) {
@@ -412,12 +412,10 @@ public class DistributedSystemFx extends Group {
 		
 		if (!byKey) systemTransition.setOnFinished( event -> information("The overall count is: " + final_overallCount));
 		
-		currentTransition = systemTransition;
+		setCurrentTransition(systemTransition);
 		
-		return currentTransition;
+		return systemTransition;
 	}
-	
-	private Transition currentTransition;
 	
 	public Transition reduceByKey(String operation, Button done_button) {
 		
@@ -427,76 +425,67 @@ public class DistributedSystemFx extends Group {
 		ArrayList<RDDPartitionFx> toRDDs = new ArrayList<>();
 		
 		for (int n = 0; n < nNodes; n++) {
-			fromShuffle.add(nodes.get(n).addTempRDD());
-			toShuffle.add(nodes.get(n).addTempRDD());
 			fromRDDs.add(nodes.get(n).getFromRDD());
 			toRDDs.add(nodes.get(n).getToRDD());
-			
-			nodes.get(n).setToRDD(fromShuffle.get(n));
+			if (nodes.size() > 1) {
+				fromShuffle.add(nodes.get(n).addTempRDD());
+				toShuffle.add(nodes.get(n).addTempRDD());
+				
+				nodes.get(n).setToRDD(fromShuffle.get(n));
+			}
 		}
 		
 		relocate();
 		
-		Transition systemTransition = new ParallelTransition(search(), operationToTransition(operation, true));
+		Transition systemTransition = operationToTransition(operation, true);
 		
-		systemTransition.setOnFinished(
-			(event1) -> {			
-				for (int n = 0; n < nNodes; n++) {
-					nodes.get(n).setFromRDD(fromShuffle.get(n));
-					nodes.get(n).setToRDD(toShuffle.get(n));
-				}
-				
-				Transition transition = shuffle();
-				transition.setRate(speed);
-				System.out.println(speed);
-				currentTransition = transition;
-				
-				transition.setOnFinished((event2) -> {
+		if (nodes.size() > 1)
+			systemTransition.setOnFinished(
+				(event1) -> {			
 					for (int n = 0; n < nNodes; n++) {
-						nodes.get(n).setFromRDD(toShuffle.get(n));
-						nodes.get(n).setToRDD(toRDDs.get(n));
+						nodes.get(n).setFromRDD(fromShuffle.get(n));
+						nodes.get(n).setToRDD(toShuffle.get(n));
 					}
 					
-					for (NodeFx node : nodes)
-						if (node.getFromRDD().size() == 0)
-			        		node.setColor(new Color(255/255.0, 128/255.0, 128/255.0, 1));
-			        	else
-			        		node.setColor(new Color(179/255.0, 255/255.0, 179/255.0, 1));
+					Transition transition = shuffle();
+					transition.setRate(getSpeed());
+					setCurrentTransition(transition);
 					
-					Transition seqTransition = new SequentialTransition(operationToTransition(operation, false), new PauseTransition(Duration.millis(1000)));
-					seqTransition.setRate(speed);
-					currentTransition = seqTransition;
-					
-					seqTransition.setOnFinished((event) -> {
-						for (int n = 0; n < nNodes; n++) 
-							nodes.get(n).setFromRDD(fromRDDs.get(n));
+					transition.setOnFinished((event2) -> {
+						for (int n = 0; n < nNodes; n++) {
+							nodes.get(n).setFromRDD(toShuffle.get(n));
+							nodes.get(n).setToRDD(toRDDs.get(n));
+						}
 						
-						relocate();
+						for (NodeFx node : nodes)
+							if (node.getFromRDD().size() == 0)
+				        		node.setColor(NodeFx.RED);
+				        	else
+				        		node.setColor(NodeFx.GREEN);
 						
-						done_button.setDisable(false);
+						Transition seqTransition = operationToTransition(operation, false);
+						seqTransition.setRate(getSpeed());
+						setCurrentTransition(seqTransition);
+						
+						seqTransition.setOnFinished((event) -> {
+							for (int n = 0; n < nNodes; n++) 
+								nodes.get(n).setFromRDD(fromRDDs.get(n));
+							
+							relocate();
+							
+							done_button.setDisable(false);
+						});
+						seqTransition.play();
 					});
-					seqTransition.play();
-				});
-				transition.play();
-			}
-		);
+					transition.play();
+				}
+			);
+		else
+			systemTransition.setOnFinished(event -> done_button.setDisable(false));
 		
-		currentTransition = systemTransition;
+		setCurrentTransition(systemTransition);
 		
-		return currentTransition;
-	}
-	
-	private double speed = 1.0;
-	
-	private Transition operationToTransition(String operation, boolean isFirst) {
-		switch (operation) {
-			case "Count": return isFirst ? count(true) : sum(true, false, true);
-			case "Min": return min(true, false);
-			case "Max": return max(true, false);
-			case "Sum": return sum(true, false, false);
-		}
-		
-		return null;
+		return systemTransition;
 	}
 	
 	private Transition shuffle() {
@@ -526,6 +515,7 @@ public class DistributedSystemFx extends Group {
 	    	
 	    	for (RecordFx record : nodes.get(n).getFromRDD().getRecords()) {
 	    		RecordFx record_paste = record.copy();
+	    		record_paste.setOpacity(1);
 	    		getChildren().add(record_paste);
 	    		record.setVisible(false);
 	    		Bounds record_copy_bounds = getSystemBounds(record);
@@ -550,6 +540,7 @@ public class DistributedSystemFx extends Group {
 
 	    	for (RecordFx record : partitionsMap.get(n)) {
 	    		RecordFx record_sort = record.copy();
+	    		record_sort.setOpacity(1);
 	    		nodes.get(n).addRecordToRDD(record_sort);
 	    		record_sort.setVisible(false);
 	    		
@@ -604,9 +595,9 @@ public class DistributedSystemFx extends Group {
 	    	systemTransition.getChildren().add(nodeTransition);
 	   	}
 	    
-	    currentTransition = systemTransition;
+	    setCurrentTransition(systemTransition);
 		
-		return currentTransition;
+		return systemTransition;
 	}	
 	
 	private int findNode(HashMap<Integer, ArrayList<RecordFx>> nodesMap, RecordFx record) {
@@ -617,16 +608,6 @@ public class DistributedSystemFx extends Group {
 		}
 		
 		return -1;
-	}
-
-	private int indexByKeyOf(RecordFx record, ArrayList<RecordFx> records) {
-		int index = -1;
-		
-		for (int r = 0; r < records.size(); r++)
-			if (record.getKey().equals(records.get(r).getKey()))
-				index = r;
-		
-		return index;
 	}
 	
 	public Transition swap() {
@@ -642,7 +623,9 @@ public class DistributedSystemFx extends Group {
 
 			for (RecordFx record : node.getFromRDD().getRecords()) {
 				RecordFx record_copy = record.copy();
-				record_copy.swap();
+				FieldFx key = record_copy.getKey();
+				record_copy.setKey(new FieldFx(record_copy.getValue().toString()));
+				record_copy.setValue(new FieldFx(key.toString()));
 				
 				swapTransition.getChildren().add(node.addRecordToRDD(record_copy));
 			}
@@ -650,11 +633,44 @@ public class DistributedSystemFx extends Group {
 			parTransition.getChildren().add(swapTransition);
 		}
 		
-		parTransition.setOnFinished((event) -> done_button.setDisable(false));
+		parTransition.setOnFinished((event) -> getDoneButton().setDisable(false));
 		
-		currentTransition = parTransition;
+		setCurrentTransition(parTransition);
 		
-		return currentTransition;
+		return parTransition;
+	}
+	
+	public Transition split() {
+		ParallelTransition parTransition = new ParallelTransition();
+		parTransition.getChildren().add(search());
+		SequentialTransition splitTransition;
+
+		for (NodeFx node : nodes) {
+			if (node.getFromRDD().isEmpty()) continue;
+
+			splitTransition = new SequentialTransition();
+
+			for (RecordFx record : node.getFromRDD().getRecords()) {
+				String line = record.getValue().toString();
+				ParallelTransition lineTransition = new ParallelTransition();
+				for (String token : line.split(" ")) {
+					RecordFx record_copy = record.copy();
+					record_copy.setKey(new FieldFx(token.trim().toLowerCase()));
+					record_copy.setValue(new FieldFx("1"));
+					
+					lineTransition.getChildren().add(node.addRecordToRDD(record_copy));
+				}
+				splitTransition.getChildren().add(lineTransition);
+			}
+
+			parTransition.getChildren().add(splitTransition);
+		}
+		
+		parTransition.setOnFinished((event) -> getDoneButton().setDisable(false));
+		
+		setCurrentTransition(parTransition);
+		
+		return parTransition;
 	}
 
 	public Transition filter(String condition, String value, boolean onKey) {
@@ -684,62 +700,21 @@ public class DistributedSystemFx extends Group {
 			parTransition.getChildren().add(filterTransition);
 		}
 		
-		parTransition.setOnFinished((event) -> done_button.setDisable(false));
+		parTransition.setOnFinished((event) -> getDoneButton().setDisable(false));
 		
-		currentTransition = parTransition;
+		setCurrentTransition(parTransition);
 		
-		return currentTransition;
-	}
-
-	private boolean filterEval(String condition, String value1, String value2) {
-		Double value;
-
-		switch (condition) {
-		case ">":
-			value = value1.equals("null") ? Double.MIN_VALUE : Double.parseDouble(value1);
-			return value > Integer.parseInt(value2);
-		case "<":
-			value = value1.equals("null") ? Double.MAX_VALUE : Double.parseDouble(value1);
-			return value < Integer.parseInt(value2);
-		case "=":
-			if (value1.equals("null"))
-				return false;
-			return value1.equals(value2);
-		case "!=":
-			if (value1.equals("null"))
-				return true;
-			return !value1.equals(value2);
-		default:
-			return false;
-		}
-	}
-
-	private Transition textUpdate(RecordFx record, String keyText, String valueText) {
-		Timeline timeline = new Timeline();
-
-		if (keyText != null) {
-			KeyValue kv1 = new KeyValue(record.getKey().getLabel().textProperty(), keyText);
-			KeyFrame kf1 = new KeyFrame(Duration.millis(FieldFx.ANIMATION_MS), kv1);
-
-			timeline.getKeyFrames().add(kf1);
-		}
-
-		KeyValue kv2 = new KeyValue(record.getValue().getLabel().textProperty(), valueText);
-		KeyFrame kf2 = new KeyFrame(Duration.millis(FieldFx.ANIMATION_MS), kv2);
-
-		timeline.getKeyFrames().add(kf2);
-		
-		return new SequentialTransition(timeline, new PauseTransition(Duration.millis(FieldFx.ANIMATION_MS)));
+		return parTransition;
 	}
 	
 	public void overwriteFromRDD() {
 		for (NodeFx node : nodes) {
-			node.getFromRDD().clear();
+			node.getFromRDD().getChildren().remove(1, node.getFromRDD().size()+1);
 			
 			for (RecordFx record : node.getToRDD().getRecords())
 				node.addRecordFromRDD(record.copy());
 			
-			node.getToRDD().clear();
+			node.getToRDD().getChildren().remove(1, node.getToRDD().size()+1);
 		}
 	}
 
@@ -761,21 +736,6 @@ public class DistributedSystemFx extends Group {
 		return systemTransition;
 	}
 
-	public static void information(String message) {
-		Alert alert = new Alert(Alert.AlertType.INFORMATION);
-		alert.setHeaderText(message);
-
-		alert.show();
-	}
-	
-	public static void warning(String message) {
-		Alert alert = new Alert(Alert.AlertType.WARNING);
-		alert.setTitle("Warning");
-		alert.setHeaderText(message);
-
-		alert.showAndWait();
-	}
-
 	public ArrayList<NodeFx> getNodes() { return nodes; }
 
 	public double height() { return height; }
@@ -786,14 +746,102 @@ public class DistributedSystemFx extends Group {
 
 	public void setWidth(double width) { this.width = width; }
 	
-	public void setSystemName(String name) { system_name = name; };
 	
+
 	@Override
-	public String toString() {
-		return system_name;
+	public Transition groupByKey() {
+		ParallelTransition systemTransition = new ParallelTransition(search());
+		SequentialTransition nodeTransition;
+		TreeSet<String> values1, values2;
+		
+		for (NodeFx node : nodes) {
+			if (node.getFromRDD().isEmpty()) continue;
+			
+			nodeTransition = new SequentialTransition();
+			
+			ArrayList<Pair<String, String>> group_values = new ArrayList<>();
+			HashMap<String, TreeSet<String>> groups = new HashMap<>();
+	
+			for (RecordFx record : node.getFromRDD().getRecords()) {
+				int index = indexByKeyOf(record, node.getToRDD().getRecords());
+				
+				if (index == -1) // new record key
+				{	
+					groups.put(record.getKey().toString(), new TreeSet<>());
+					values1 = groups.get(record.getKey().toString());
+					values2 = stringToOrderedSet(record.getValue().toString());
+					values1.addAll(values2);
+					
+					RecordFx r = new RecordFx(record.getKey().toString(), values1.toString().substring(1, values1.toString().length()-1));
+					group_values.add(new Pair<String, String>(r.getKey().toString(), r.getValue().toString()));
+					
+					nodeTransition.getChildren().add(node.addRecordToRDD(r));
+				} else { // record key found	
+					
+					RecordFx prevRecord = node.getToRDD().getRecords().get(index);
+					
+					values1 = groups.get(record.getKey().toString());
+					values2 = stringToOrderedSet(record.getValue().toString());
+					values1.addAll(values2);
+					group_values.set(index, new Pair<>(record.getKey().toString(), values1.toString().substring(1, values1.toString().length()-1)));
+										
+					nodeTransition.getChildren().add(textUpdate(prevRecord, null, group_values.get(index).getValue()));
+				}
+			}
+			
+			systemTransition.getChildren().add(nodeTransition);
+		}
+		
+		setCurrentTransition(systemTransition);
+		
+		return systemTransition;
+	}
+
+	@Override
+	public Transition flatMapToPair() {
+		ParallelTransition parTransition = new ParallelTransition();
+		parTransition.getChildren().add(search());
+		SequentialTransition splitTransition;
+	
+		for (NodeFx node : nodes) {
+			if (node.getFromRDD().isEmpty()) continue;
+	
+			splitTransition = new SequentialTransition();
+	
+			for (RecordFx record : node.getFromRDD().getRecords()) {
+				ParallelTransition lineTransition = new ParallelTransition();
+				TreeSet<String> treeSet = stringToOrderedSet(record.getValue().toString());
+				
+				if (treeSet.size() < 2) {
+					splitTransition.getChildren().add(new PauseTransition(Duration.millis(2 * FieldFx.ANIMATION_MS)));
+					continue;
+				}
+				
+				String[] array = treeSet.toArray(new String[0]);
+				
+				for (int i = 0; i < treeSet.size()-1; i++) 
+					for (int j = i+1; j < treeSet.size(); j++) {
+						RecordFx record_copy = record.copy();
+						record_copy.setKey(new FieldFx(array[i]+", "+array[j]));
+						record_copy.setValue(new FieldFx("1"));
+					
+						lineTransition.getChildren().add(node.addRecordToRDD(record_copy));
+					}
+				
+				splitTransition.getChildren().add(lineTransition);
+			}
+	
+			parTransition.getChildren().add(splitTransition);
+		}
+		
+		parTransition.setOnFinished((event) -> getDoneButton().setDisable(false));
+		
+		setCurrentTransition(parTransition);
+		
+		return parTransition;
 	}
 	
-	public static class MoveToAbs extends MoveTo {
+	/*public static class MoveToAbs extends MoveTo {
 
 	    public MoveToAbs( Node node) {
 	        super( node.getLayoutBounds().getWidth() / 2, node.getLayoutBounds().getHeight() / 2);
@@ -807,38 +855,5 @@ public class DistributedSystemFx extends Group {
 	        super( x - node.getLayoutX() + node.getLayoutBounds().getWidth() / 2, y - node.getLayoutY() + node.getLayoutBounds().getHeight() / 2);
 	    }
 
-	}
-	
-	private Bounds getSystemBounds(Node node) {
-		Parent parent = node.getParent();
-		Bounds bounds = node.getBoundsInParent();
-		
-		while (!parent.getClass().equals(DistributedSystemFx.class)) {
-			bounds = parent.localToParent(bounds);
-			parent = parent.getParent();
-			if (parent == null)
-				System.out.println();
-		}
-		
-		return bounds;
-	}
-	
-	public Transition getCurrentTransition() {
-		return currentTransition;
-	}
-
-	public void setRate(double speed_value) {
-		speed = speed_value;
-		currentTransition.setRate(speed);
-	}
-	
-	private Button done_button;
-
-	public void setDoneButton(Button done_button) {
-		this.done_button = done_button;
-	}
-	
-	public Button getDoneButton() {
-		return done_button;
-	}
+	}*/
 }

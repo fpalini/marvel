@@ -1,4 +1,4 @@
-package spark_visualizer.visualization.sparkfx;
+package marvel.visualization.sparkfx;
 
 import java.util.ArrayList;
 import java.util.List;

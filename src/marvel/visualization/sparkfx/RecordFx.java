@@ -1,4 +1,4 @@
-package spark_visualizer.visualization.sparkfx;
+package marvel.visualization.sparkfx;
 
 import javafx.animation.FadeTransition;
 import javafx.animation.ParallelTransition;
@@ -24,12 +24,11 @@ public class RecordFx extends HBox {
     
 
     public RecordFx(String k, String v) {
+    	this.setOpacity(0);
         fadeIn = new FadeTransition(Duration.millis(2 * FieldFx.ANIMATION_MS), this);
-        fadeIn.setFromValue(0.0);
         fadeIn.setToValue(1.0);
         
         fadeOut = new FadeTransition(Duration.millis(2 * FieldFx.ANIMATION_MS), this);
-        fadeOut.setFromValue(1.0);
         fadeOut.setToValue(0.0);
 
         value = new FieldFx(v);
@@ -82,9 +81,19 @@ public class RecordFx extends HBox {
     
     public FieldFx getValue() { return value; }
     
-    public void setKey(FieldFx f) { key = f; }
+    public void setKey(FieldFx f) { 
+    	key = f;
+    	if (getChildren().size() == 1) // key was null
+    		getChildren().add(0, key);
+    	else
+    		getChildren().set(0, key);
+    }
     
-    public void setValue(FieldFx f) { value = f; }
+    public void setValue(FieldFx f) { 
+    	value = f; 
+    	int idx = key == null ? 0 : 1;
+    	getChildren().set(idx, value);
+    }
     
     public void setColor(Color color) { value.setColor(color); }
     
@@ -94,13 +103,5 @@ public class RecordFx extends HBox {
     @Override
     public String toString() {
     	return "(" + (key != null? key.toString() + ", " : "") + value.toString() + ")";
-    }
-    
-    public void swap() {
-    	value.toBack();
-    	
-    	FieldFx tmp = key;
-    	key = value;
-    	value = tmp;
     }
 }

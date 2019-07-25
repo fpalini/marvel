@@ -1,4 +1,4 @@
-package spark_visualizer.mapreduce;
+package marvel.mapreduce;
 
 import java.util.ArrayList;
 
@@ -18,7 +18,7 @@ public class MapReduceAlgo {
 		Logger.getLogger("org").setLevel(Level.ERROR);
 		Logger.getLogger("akka").setLevel(Level.ERROR);
 		
-		jsc = new JavaSparkContext("local[" + nExecutors + "]", "Spark Visualizer");
+		jsc = new JavaSparkContext("local[" + nExecutors + "]", "MARVEL");
 	}
 
 	public JavaPairRDD<String, String> getFromRDD() { return fromRDD; }
