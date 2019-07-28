@@ -1,0 +1,40 @@
+plugins {
+    id 'java'
+    id 'com.github.johnrengelman.shadow' version '5.1.0'
+}
+
+group 'it.uniroma1.dss'
+version '2.0.5'
+
+sourceCompatibility = 1.8
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src']
+        }
+        resources {
+            srcDirs = ['res']
+        }
+    }
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'marvel.Main'
+    }
+}
+
+shadowJar {
+    zip64 true
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'org.apache.spark:spark-core_2.11:2.2.1'
+    compile 'org.controlsfx:controlsfx:8.40.15'
+
+}

@@ -28,9 +28,7 @@ public class Main extends Application {
 	@Override
 	public void start(Stage primaryStage) {
 		try {
-			System.setProperty("hadoop.home.dir", "C:\\Spark\\spark-2.3.0-bin-hadoop2.7");
-			
-			FXMLLoader loader = new FXMLLoader(getClass().getResource("marvel.fxml"));
+			FXMLLoader loader = new FXMLLoader(getClass().getResource("/marvel.fxml"));
 			Parent root = loader.load();
 			
 			MarvelController controller = loader.getController();
@@ -47,7 +45,7 @@ public class Main extends Application {
 			controller.initSystem();
 			
 			Scene scene = new Scene(root);
-			scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
+			scene.getStylesheets().add(getClass().getResource("/application.css").toExternalForm());
 			
 			primaryStage.setScene(scene);
 			primaryStage.setTitle("MARVEL");
@@ -62,7 +60,7 @@ public class Main extends Application {
 	public static void main(String[] args) {
 		Options options = new Options();
 
-        Option option_array[] = new Option[] { 
+        Option[] option_array = new Option[] {
         		new Option("d", "datasize", true, "size of the dataset. "
         				+ "With value -1 the program reads all the records, when input is specified."),
         		new Option("b", "blocksize", true, "size of each block inside the system"),
