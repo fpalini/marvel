@@ -8,17 +8,6 @@ version '2.0.5'
 
 sourceCompatibility = 1.8
 
-sourceSets {
-    main {
-        java {
-            srcDirs = ['src']
-        }
-        resources {
-            srcDirs = ['res']
-        }
-    }
-}
-
 jar {
     manifest {
         attributes 'Main-Class': 'marvel.Main'
