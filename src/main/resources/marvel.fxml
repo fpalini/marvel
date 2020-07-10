@@ -19,7 +19,7 @@
 <?import javafx.scene.text.Text?>
 <?import org.controlsfx.control.BreadCrumbBar?>
 
-<BorderPane prefHeight="600.0" prefWidth="1050.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="marvel.visualization.MarvelController">
+<BorderPane prefHeight="720.0" prefWidth="1280.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="marvel.visualization.MarvelController">
    <center>
       <TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
         <tabs>
@@ -140,12 +140,12 @@
                <padding>
                   <Insets left="20.0" />
                </padding></Label>
-            <ComboBox fx:id="map_list" prefHeight="26.0" prefWidth="100.0" />
+            <ComboBox fx:id="map_list" prefHeight="26.0" prefWidth="160.0" />
             <Label minHeight="10.0" minWidth="60.0" text="Reduce">
                <padding>
                   <Insets left="10.0" />
                </padding></Label>
-            <ComboBox fx:id="reduce_list" prefHeight="26.0" prefWidth="100.0" />
+            <ComboBox fx:id="reduce_list" prefHeight="26.0" prefWidth="160.0" />
             <Separator orientation="VERTICAL" prefHeight="0.0" prefWidth="2.0">
                <padding>
                   <Insets left="5.0" right="5.0" />
