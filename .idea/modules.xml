@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea.marvel.iml" filepath="$PROJECT_DIR$/.idea/modules/idea.marvel.iml" />
       <module fileurl="file://$PROJECT_DIR$/marvel.iml" filepath="$PROJECT_DIR$/marvel.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/marvel.main.iml" filepath="$PROJECT_DIR$/.idea/modules/marvel.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/marvel.test.iml" filepath="$PROJECT_DIR$/.idea/modules/marvel.test.iml" />
