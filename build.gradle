@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'it.uniroma1.dss'
-version '2.0.5'
+version '1.0'
 
 sourceCompatibility = 1.8
 
