@@ -638,7 +638,7 @@ public class MarvelController implements Initializable {
 	@FXML
 	private void chooseFile() {
 		FileChooser fileChooser = new FileChooser();
-		fileChooser.getExtensionFilters().add(new ExtensionFilter("CSV", "*.csv"));
+		fileChooser.getExtensionFilters().add(new ExtensionFilter("*.csv,*.txt", "*.csv", "*.txt"));
 		fileChooser.setTitle("Import Dataset File");
 		input_file = fileChooser.showOpenDialog(new Stage());
 	}
