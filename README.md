@@ -6,10 +6,16 @@ Spark distributed data structure. Moreover, he can choose among a list of standa
 reduce functions and apply it on the distributed data structure, playing a graphical animation 
 describing the effects of that execution on the same data structure.
 
-## Requirements
+A copy of MARVEL, including source code, can be downloaded from: [MARVEL](http://www.statistica.uniroma1.it/users/uferraro/experim/MARVEL/marvel-1.0.zip)
+
+## Requirements and Usage
 
 MARVEL software is available as a runnable JAR package containing all the dependencies. 
 The only requirement needed to run MARVEL is an installation of Java version >= 8.
+
+The software package includes a single executable jar file, marvel-1.0-all.jar, that can be used to run MARVEL from the comamnd line using the following syntax:
+
+ `java -jar marvel-1.0-all.jar`
 
 ## Running Example - WordCount
 
@@ -22,7 +28,7 @@ introduce the user to the graphical interface and metaphors.
 
 The starting point of the MARVEL execution is the choice of the environment: local or distributed.
 
-![image info](./screens/00_start.png)
+![](https://drive.google.com/uc?id=1CE7hYcOX1wFHl5ufl4j95R_JA_xQCfgx)
 
 The following sections show the graphical differences between the two modes 
 in MARVEL, for the execution of WordCount.
@@ -39,7 +45,7 @@ the **Generate** button creates a random input with the value types specified.
 Note that some of the parameters fields are only available when the distributed mode
 is selected.
 
-![image info](./screens/01_local_config.png)
+![](https://drive.google.com/uc?id=1LAI96sy6AA7xfrc-qo1FCmrO81MDTkAt)
 
 2. **Environment Screen**:
 
@@ -60,7 +66,7 @@ steps and, eventually, to override or re-run some of them.
 The **Zoom** and **Speed** sliders can be useful to, respectively, focus on some points
 or slow-down the execution of some operations to better appreciate the effects.
 
-![image info](./screens/02_local_start.png)
+![](https://drive.google.com/uc?id=1imY3POu-25-Rnggg6rTyglt3Q8UDVpQn)
 
 3. **Split Function (Map Transformation)**:
 
@@ -75,7 +81,7 @@ value 1, often used in lots of tasks.
 After having chosen the transformation, the user must click on the **Run** button, then
 the animation begins, producing the output data structure.
 
-![image info](./screens/03_local_split.png)
+![](https://drive.google.com/uc?id=1hFzHBvbkoDwY3GUcvwYJBCPMe2EOO5_o)
 
 At the end of the animation, the **Done** button is available, as shown in the 
 previous figure.
@@ -84,7 +90,7 @@ The following figure shows the state of the application, after clicking on that 
 displayed upon the resulting data structure and the *split* item is added to the 
 navigation bar on the right.
 
-![image info](./screens/04_local_split_done.png)
+![](https://drive.google.com/uc?id=160pQGU74tGQwcrPNlKh4Nm1dJ2m1M_qP)
 
 4. **Sum Function (Reduce Transformation)**:
 
@@ -95,7 +101,7 @@ values associated to the same key.
 *reduce* functions. In this case the resulting data structure contains no duplicated keys,
 since they have been aggregated.
 
-![image info](./screens/05_local_reduce_sum.png)
+![](https://drive.google.com/uc?id=18tZck4xqjtRnm_tMYseJpOOUrGJSRc_U)
 
 Also in this case the pressure of the **Done** button produces the label upon the 
 resulting data structure and the item inside the navigation bar, but the label
@@ -103,14 +109,14 @@ color is *red*. This metaphore is used to instruct the user that the performed o
 is expensive in a distributed environment, i.e. involves moving data blocks among the
 workers.
 
-![image info](./screens/06_local_reduce_sum_done.png)
+![](https://drive.google.com/uc?id=1av2e5iAJfoR_PpXPjWj9TQGwb3ZTwKXJ)
 
 In local mode is available a feature that allows to visualize the pipeline of operations
 performed to obtain a particular record of the selected data structure. By clicking on 
 the record, it is linked to the related records belonging to previous data structure, 
 as shown in the following figure.
 
-![image info](./screens/07_local_reduce_sum_line.png)
+![](https://drive.google.com/uc?id=10eVGu2h82aPvurzCbFycbgCU_DSdb1tm)
 
 ### Distributed Execution
 
@@ -124,7 +130,7 @@ the **Generate** button creates a random input with the value types specified.
 Choosing the distributed mode, the user can specify the number of nodes belonging to the distributed system
 and the dimensions of the blocks with which the data are split.
 
-![image info](./screens/01_distr_config.png)
+![](https://drive.google.com/uc?id=130o9Adt6HGK2xTzQPGCq6X1THZzyKWBT)
 
 2. **Environment Screen**:
 
@@ -143,7 +149,7 @@ steps and, eventually, to override or re-run some of them.
 The **Zoom** and **Speed** sliders can be useful to, respectively, focus on some points
 or slow-down the execution of some operations to better appreciate the effects.
 
-![image info](./screens/02_distr_start.png)
+![](https://drive.google.com/uc?id=1KXmR3g_KndnwSGI-GtO4O2DS1aHURyb7)
 
 3. **Split Function (Map Transformation)**:
 
@@ -159,7 +165,7 @@ After having chosen the transformation, the user must click on the **Run** butto
 the animation begins, producing as output a new distributed data structure. The output is built in parallel
 in each node and it is displayed on the right side of each node.
 
-![image info](./screens/03_distr_split.png)
+![](https://drive.google.com/uc?id=1TbQ6L9yua_IzcWT09DB8s6Ps4DMwSyu5)
 
 At the end of the animation, the **Done** button is available, as shown in the 
 previous figure.
@@ -168,7 +174,7 @@ The following figure shows the state of the application, after clicking on that 
 The output data structure is moved on the left side of each node, becoming the input of a 
 next transformation. The *split* item is added to the navigation bar on the right.
 
-![image info](./screens/04_distr_split_done.png)
+![](https://drive.google.com/uc?id=1cFfus2WKdi3Ofgyse1B7o89-vD7z769F)
 
 4. **Sum Function (Reduce Transformation)**:
 
@@ -179,7 +185,7 @@ values associated to the same key.
 *reduce* functions. In this case the resulting data structure contains no duplicated keys,
 since they have been aggregated.
 
-![image info](./screens/05_distr_reduce_sum.png)
+![](https://drive.google.com/uc?id=1FRzHYkWFppFVVLajkAxTO7xtaCpr3Rd2)
 
 Also in this case the pressure of the **Done** button moves the output data structure 
 on the left side of each node and the item inside the navigation bar, but the label
@@ -187,4 +193,4 @@ color is *red*. This metaphore is used to instruct the user that the performed o
 is expensive in a distributed environment, i.e. involves moving data blocks among the
 workers.
 
-![image info](./screens/06_distr_reduce_sum_done.png)
+![](https://drive.google.com/uc?id=123tQ92KZDv-ciWcBwvkxouCAfIPXXLc5)
